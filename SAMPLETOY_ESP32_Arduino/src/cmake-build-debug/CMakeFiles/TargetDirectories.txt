@@ -1,0 +1,3 @@
+C:/Users/thesh/Documents/SampletoyCgit/12724/SAMPLETOY/SAMPLETOY_ESP32_Arduino/src/cmake-build-debug/CMakeFiles/src.dir
+C:/Users/thesh/Documents/SampletoyCgit/12724/SAMPLETOY/SAMPLETOY_ESP32_Arduino/src/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/thesh/Documents/SampletoyCgit/12724/SAMPLETOY/SAMPLETOY_ESP32_Arduino/src/cmake-build-debug/CMakeFiles/rebuild_cache.dir
