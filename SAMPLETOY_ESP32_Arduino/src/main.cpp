@@ -1,15 +1,26 @@
 #include <Arduino.h>
 #include "TestsSampletoy.h"
+extern "C"{ //C header inclusions
+    #include "SampletoyUtility.h"
+    #include "SampletoyIO.h"
+}
 
-#define DAC_OUT_BUS {2, 4, 17, 18, 21, 23, 36, 34}
+const int DAC_OUT_BUS[] {2, 4, 17, 18, 21, 23, 36, 34};
 #define DAC_CLOCK_PIN 25
+#define DAC_BUS_WIDTH 8
 /// PINS 2, 4, 17, 18, 21, 23, 36, 34 DEFINE DAC OUT BYTE BUS
 /// PIN 25 IS DAC CLOCK BIT, it controls which byte audio information is placed onto
 /// We have limited IO pins, therefore i'm not allocating a full 16 bit wide bus, but this method. Still need to implement, obvs this requires flipflops
 
+//declare memory allocations
+uint8_t dacPort = 0;
 
 // put function declarations here:
-int testDacOutputPins(int, int);
+void placeDacPortOnPins();
+int getBitinInt(int, int);
+
+//test declarations
+void mainTestCounterOverpins(double timeFactor);
 
 void setup() {
   // put your setup code here, to run once:
@@ -22,6 +33,8 @@ void setup() {
   pinMode(DAC_CLOCK_PIN, OUTPUT);
 
   Serial.println("setup finished");
+
+  //Initialise IO
 }
 
 void realloop() { //Real loop, change name for testloop below
@@ -29,11 +42,21 @@ void realloop() { //Real loop, change name for testloop below
 
 void loop(){ //Test loop, a clean small loop that you enter by changing the name of the function. Its bad, i know :(
   // Call whatever test loop you need here, write tests in src and import here
-
+  mainTestCounterOverpins(1);
 }
 
 
 // put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+void placeDacPortOnPins(){
+    for (uint8_t bit = 0; bit < DAC_BUS_WIDTH; bit++){
+        digitalWrite(DAC_OUT_BUS[bit], getBitinInt(dacPort, bit));
+    }
+}
+
+//Tests definitions
+void mainTestCounterOverpins(double timeFactor){
+    double blink_interval = 25 * timeFactor;
+    placeDacPortOnPins();
+    delay(blink_interval);
+    dacPort++;
 }

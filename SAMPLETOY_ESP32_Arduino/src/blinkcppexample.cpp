@@ -7,6 +7,8 @@
 // put function declarations here:
 int demomyFunction(int, int);
 
+//Allocate variables
+
 void demosetup() {
   // put your setup code here, to run once:
   Serial.begin(115200); //setup baud
@@ -35,3 +37,4 @@ void demoloop() {
 int demomyFunction(int x, int y) {
   return x + y;
 }
+
