@@ -1,11 +1,11 @@
 #include <Arduino.h>
 #include "TestsSampletoy.h"
 extern "C"{ //C header inclusions
-    #include "SampletoyUtility.h"
+    // #include "SampletoyUtility.h"
     #include "SampletoyIO.h"
 }
 
-const int DAC_OUT_BUS[] {2, 4, 17, 18, 21, 23, 36, 34};
+const int DAC_OUT_BUS[] {35, 26, 14, 12, 34, 25, 27, 13};
 #define DAC_CLOCK_PIN 25
 #define DAC_BUS_WIDTH 8
 /// PINS 2, 4, 17, 18, 21, 23, 36, 34 DEFINE DAC OUT BYTE BUS
@@ -17,7 +17,6 @@ uint8_t dacPort = 0;
 
 // put function declarations here:
 void placeDacPortOnPins();
-int getBitinInt(int, int);
 
 //test declarations
 void mainTestCounterOverpins(double timeFactor);
@@ -47,9 +46,24 @@ void loop(){ //Test loop, a clean small loop that you enter by changing the name
 
 
 // put function definitions here:
+int getBitinInt(int number, int bitposition){ return (number & (1<<bitposition)) != 0;}
+
 void placeDacPortOnPins(){
     for (uint8_t bit = 0; bit < DAC_BUS_WIDTH; bit++){
         digitalWrite(DAC_OUT_BUS[bit], getBitinInt(dacPort, bit));
+        if (DAC_OUT_BUS[bit] == 17) {
+          switch (getBitinInt(dacPort, 2))
+          {
+          case 0:
+            Serial.println("Lo");
+            break;
+          case 1:
+            Serial.println("Hi");
+          default:
+            Serial.println("Guy");
+            break;
+          }
+        }
     }
 }
 
