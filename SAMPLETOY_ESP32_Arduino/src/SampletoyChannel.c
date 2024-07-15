@@ -7,6 +7,7 @@
 const uint8_t uint8_middle = 128;
 const uint32_t uint32_middle = 2147483648;
 
+
 //SET INITIAL GAIN TO 70% (179)
 //MIDDLE OF A uint8 is 128, so lr is set to middle (no pan)
 //MIDDLE OF uint32 is 2,147,483,648

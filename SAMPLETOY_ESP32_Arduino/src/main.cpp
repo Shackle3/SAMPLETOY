@@ -34,7 +34,7 @@ void mainTestCounterOverDACBus(double timeFactor);
 
 //Global variables
   //Debug
-  bool display_test_message = true; //debug value used to display a message on the first loop of tests
+  bool first_runtime = true; //debug value used to display a message on the first loop of tests
 
   //System Setup
   int beats_per_minute = 140; //@todo implement this as struct in a Generation Coordinator struct system
@@ -43,7 +43,7 @@ void mainTestCounterOverDACBus(double timeFactor);
 
 void setup() {
   Serial.begin(115200); //setup baud
-  Serial.println("Init SAMPLETOY build 0.01, Written by Fabian Lee! Hello Developer and or Hackerman!");
+  Serial.println("Init SAMPLETOY build 0.2, Written by Fabian Lee! Hello Developer and or Hackerman!");
 
   //setup DAC output bus
   for (uint8_t pin : DAC_OUT_BUS){
@@ -62,15 +62,14 @@ void setup() {
   Serial.println("setup finished");
 }
 
-void realloop() { //Real loop, change name for testloop below
+void realLoop() { //Real loop, change name for testloop below
 //Below is the basis for the running music generation loop
 //Setup, change values
 
 //Calculate Synth values, update samples
 
 //Sum to master
-sumChannelsOnDacPort();
-placeDacPortOnPins();
+
 //Post, cleanup
 }
 
@@ -106,10 +105,10 @@ void sumChannelsOnDacPort(){ //@todo REWRITE FOR NEW CHANNEL SYSTEM
 
 void mainTestCounterOverDACBus(double timeFactor){
   //test pinout
-    if (display_test_message){
+    if (first_runtime){
       Serial.println("running test counter over DAC pins, pins show boolean value of a counting uint8 ");
       Serial.println("output pins in LSB to MSB order is 5, 19, 22, 26, 4, 18, 21, 25");
-      display_test_message = false; // don't display message again
+      first_runtime = false; // don't display message again
     }
     double blink_interval = 25 * timeFactor;
     placeDacPortOnPins();
@@ -121,3 +120,19 @@ void mainTestAudioSynthesis(){
  //test audio synthesis functions
 }
 
+void mainTestChannelfunctionalities(){
+  if (first_runtime){
+    Serial.println("running tests on the implementation and functionality of SampletoyChannel.c/h");
+    Serial.println("Beginning tests on functions:");
+    delay(5000);
+    //Assign increasing values for different channels using SET, then print it to terminal using GET. Sweep all channels
+    //Reset
+    //Recheck all values are reset
+    delay(5000);
+    //run same test on Master
+    //test resetting only gain
+    //test superposition
+    //test reset
+    //check all values are reset
+  }
+}

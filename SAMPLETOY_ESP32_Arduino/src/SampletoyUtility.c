@@ -4,4 +4,6 @@
 
 #include "SampletoyUtility.h"
 
-int getBitinInt(int number, int bitposition){ return (number & (1<<bitposition)) != 0;}
+int getBitinInt(int number, int bitposition){
+    return (number & (1<<bitposition)) != 0;
+}
