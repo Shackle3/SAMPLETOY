@@ -84,7 +84,7 @@ uint8_t masterGetGain(const MasterChannel* target){
     return target->output_prescaling;
 }
 
-uint8_t masterGetLR(const MasterChannel* target){
+uint8_t masterGetMS(const MasterChannel* target){
     return target->mono_side_correlation;
 }
 

@@ -2,8 +2,10 @@
 // Created by Fabian Uni on 14/07/2024.
 //
 
-#include <stdint.h>
 #ifndef SAMPLETOY_ESP32_ARDUINO_SAMPLETOYCHANNEL_H
+
+#include <stdint.h>
+
 #define SAMPLETOY_ESP32_ARDUINO_SAMPLETOYCHANNEL_H
 //extern typedef struct Channel Channel;
 typedef struct Channel Channel;
@@ -53,7 +55,7 @@ uint8_t  masterGetGain(const MasterChannel* target);
 //Returns the Prescale float applied to all inputs to master
 float masterGetPrescale(const MasterChannel* target);
 //Returns the Left Right pan of the Master
-uint8_t  masterGetLR(const MasterChannel* target);
+uint8_t  masterGetMS(const MasterChannel* target);
 //Sets a new Level value
 void masterSetLevel(MasterChannel* target, uint32_t new_level_left, uint32_t new_level_right);
 //Superpositions another channels level onto master

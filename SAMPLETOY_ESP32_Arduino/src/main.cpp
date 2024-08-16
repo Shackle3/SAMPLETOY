@@ -71,11 +71,14 @@ void realLoop() { //Real loop, change name for testloop below
 //Sum to master
 
 //Post, cleanup
+
+    first_runtime = false;
 }
 
 void loop(){ //Test loop, a clean small loop that you enter by changing the name of the function. Its bad, i know :(
-  // Call whatever test loop you need here, write tests in src and import here
-  //Should be inaccessible to realloop
+    // Call whatever test loop you need here, write tests in src and import here
+    //Should be inaccessible to realloop
+    first_runtime = false;
 }
 
 
@@ -102,37 +105,60 @@ void sumChannelsOnDacPort(){ //@todo REWRITE FOR NEW CHANNEL SYSTEM
 }
 
 //Tests definitions (run and chrono multiple tests)
-
-void mainTestCounterOverDACBus(double timeFactor){
-  //test pinout
-    if (first_runtime){
-      Serial.println("running test counter over DAC pins, pins show boolean value of a counting uint8 ");
-      Serial.println("output pins in LSB to MSB order is 5, 19, 22, 26, 4, 18, 21, 25");
-      first_runtime = false; // don't display message again
+namespace tests {
+    void mainTestCounterOverDACBus(double timeFactor) {
+        //test pinout
+        if (first_runtime) {
+            Serial.println("running test counter over DAC pins, pins show boolean value of a counting uint8 ");
+            Serial.println("output pins in LSB to MSB order is 5, 19, 22, 26, 4, 18, 21, 25");
+            first_runtime = false; // don't display message again
+        }
+        double blink_interval = 25 * timeFactor;
+        placeDacPortOnPins();
+        delay(blink_interval);
+        dac_port++;
     }
-    double blink_interval = 25 * timeFactor;
-    placeDacPortOnPins();
-    delay(blink_interval);
-    dac_port++;
-}
 
-void mainTestAudioSynthesis(){
- //test audio synthesis functions
-}
+    void mainTestAudioSynthesis() {
+        //test audio synthesis functions
+    }
 
-void mainTestChannelfunctionalities(){
-  if (first_runtime){
-    Serial.println("running tests on the implementation and functionality of SampletoyChannel.c/h");
-    Serial.println("Beginning tests on functions:");
-    delay(5000);
-    //Assign increasing values for different channels using SET, then print it to terminal using GET. Sweep all channels
-    //Reset
-    //Recheck all values are reset
-    delay(5000);
-    //run same test on Master
-    //test resetting only gain
-    //test superposition
-    //test reset
-    //check all values are reset
-  }
+    void mainTestChannelfunctionalities() {
+        if (first_runtime) {
+            Serial.println("running tests on the implementation and functionality of SampletoyChannel.c/h");
+            Serial.println("Beginning tests on functions:");
+            delay(5000);
+            //Assign increasing values for different channels using SET, then print it to terminal using GET. Sweep all channels
+            //Reset
+            //Recheck all values are reset
+            delay(5000);
+            //run same test on Master
+            //test resetting only gain
+            //test superposition
+            //test reset
+            //check all values are reset
+        }
+    }
+}
+namespace debug {
+    void DumpChannelData(const Channel *target, uint8_t channel_number) {
+        Serial.println("DEBUG:::dumping channel information for channel: %d", channel_number);
+        Serial.println(channel_number);
+        Serial.println("in format L, R, ms, g, lrp");
+        Serial.println(channelGetLevelLeft(target));
+        Serial.println(channelGetLevelRight(target));
+        Serial.println(channelGetMonoSide(target));
+        Serial.println(channelGetGain(target));
+        Serial.println(channelGetLR(target));
+    }
+
+    void DumpMasterData(MasterChannel *target) {
+        Serial.println("DEBUG:::dumping master information");
+        Serial.println("in format L, R, g, pre, ms");
+        Serial.println(masterGetLevelLeft(target));
+        Serial.println(masterGetLevelRight(target));
+        Serial.println(masterGetGain(target));
+        Serial.println(masterGetPrescale(target));
+        Serial.println(masterGetMS(target));
+    }
 }
