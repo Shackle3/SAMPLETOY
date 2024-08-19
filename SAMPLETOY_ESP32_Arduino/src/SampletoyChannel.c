@@ -12,24 +12,17 @@ const uint32_t uint32_middle = 2147483648;
 //MIDDLE OF A uint8 is 128, so lr is set to middle (no pan)
 //MIDDLE OF uint32 is 2,147,483,648
 
-/*
-struct Channel{
-    uint32_t level;
-    uint8_t gain;
-    uint8_t left_right_pan;
-    uint8_t mono_side_correlation;
-};*/
-//Update me :)
-
 //Investigate methods further, its C tho so oyu know how it works :/
 //Channel Funtions
+
+
 
 uint32_t channelGetLevelLeft(const Channel* target){
     return target->level_left;
 }
 
 uint32_t channelGetLevelRight(const Channel* target){
-    return target->level_right
+    return target->level_right;
 }
 
 uint8_t channelGetGain(const Channel* target){

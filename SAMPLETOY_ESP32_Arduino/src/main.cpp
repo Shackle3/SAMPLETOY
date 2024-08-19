@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include "TestsSampletoy.h"
 #include <vector>
 #include <chrono>
 
@@ -30,7 +29,15 @@ void placeDacPortOnPins();
 void sumChannelsOnDacPort();
 
 //test declarations
-void mainTestCounterOverDACBus(double timeFactor);
+namespace debug{
+    void DumpChannelData(const Channel *target, uint8_t channel_number);
+    void DumpMasterData(MasterChannel *target);
+}
+namespace tests{
+    void mainTestCounterOverDACBus(double timeFactor);
+    void mainTestAudioSynthesis();
+    void mainTestChannelFunctionalities();
+}
 
 //Global variables
   //Debug
@@ -52,7 +59,7 @@ void setup() {
   pinMode(DAC_CLOCK_PIN, OUTPUT);
 
   //Initialise Channels
-  for (Channel this_channel : sub_channels){
+  for (Channel &this_channel : sub_channels){
       reinitialiseChannel(&this_channel);
   }
 
@@ -78,6 +85,9 @@ void realLoop() { //Real loop, change name for testloop below
 void loop(){ //Test loop, a clean small loop that you enter by changing the name of the function. Its bad, i know :(
     // Call whatever test loop you need here, write tests in src and import here
     //Should be inaccessible to realloop
+    if (first_runtime){
+        tests::mainTestChannelFunctionalities();
+    }
     first_runtime = false;
 }
 
@@ -123,26 +133,68 @@ namespace tests {
         //test audio synthesis functions
     }
 
-    void mainTestChannelfunctionalities() {
+    void mainTestChannelFunctionalities() {
         if (first_runtime) {
             Serial.println("running tests on the implementation and functionality of SampletoyChannel.c/h");
             Serial.println("Beginning tests on functions:");
             delay(5000);
             //Assign increasing values for different channels using SET, then print it to terminal using GET. Sweep all channels
+            int counter = 0;            
+            for (Channel &channel_target : sub_channels){
+                setChannelLevel(&channel_target, counter, counter + 1);
+                counter = counter + 2;
+                setChannelGain(&channel_target, counter);
+                counter++;
+                setChannelLR(&channel_target, counter);
+                counter++;
+                setChannelMS(&channel_target, counter);
+                counter++;
+                
+            }
+            //unique values on all channels
+            int channel_counter = 1;
+            for (Channel &this_channel : sub_channels){
+                debug::DumpChannelData(&this_channel, channel_counter);
+                channel_counter++;
+            }
             //Reset
-            //Recheck all values are reset
+            for (Channel &this_channel : sub_channels){
+                reinitialiseChannel(&this_channel);
+            }
+            channel_counter = 1;
+            for (Channel &this_channel : sub_channels){
+                debug::DumpChannelData(&this_channel, channel_counter);
+                channel_counter++;
+            }
+            Serial.println("testing master in 5 seconds...");
             delay(5000);
             //run same test on Master
-            //test resetting only gain
-            //test superposition
-            //test reset
-            //check all values are reset
+            masterSetLevel(&session_master_channel, counter * 10, (counter + 1) * 10);
+            counter = counter + 2;
+            Serial.println("intermediate test on setlevel");
+            debug::DumpMasterData(&session_master_channel);
+            //testing first of the two add to level functions
+            resetMasterLevelToMiddle(&session_master_channel);
+            addSignalToMasterLevelLeft(&session_master_channel, counter);
+            counter++;
+            addSignalToMasterLevelRight(&session_master_channel, counter);
+            counter++;
+            masterSetGain(&session_master_channel, counter);
+            counter++;
+            masterSetPrescale(&session_master_channel, counter);
+            counter++;
+            masterSetMS(&session_master_channel, counter);
+            counter++;
+            debug::DumpMasterData(&session_master_channel);
+            //reset, check reset is correct
+            reinitialiseMasterChannel(&session_master_channel);
+            debug::DumpMasterData(&session_master_channel);
         }
     }
 }
 namespace debug {
     void DumpChannelData(const Channel *target, uint8_t channel_number) {
-        Serial.println("DEBUG:::dumping channel information for channel: %d", channel_number);
+        Serial.println("DEBUG:::dumping channel information for channel:");
         Serial.println(channel_number);
         Serial.println("in format L, R, ms, g, lrp");
         Serial.println(channelGetLevelLeft(target));
