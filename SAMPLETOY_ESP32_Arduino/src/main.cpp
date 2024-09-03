@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <vector>
 #include <chrono>
+#include <esp32-hal-ledc.h>
 
 extern "C"{ //C header inclusions
     #include "SampletoyUtility.h"
@@ -37,6 +38,7 @@ namespace tests{
     void mainTestCounterOverDACBus(double timeFactor);
     void mainTestAudioSynthesis();
     void mainTestChannelFunctionalities();
+    void mainTestPwmIndependence();
 }
 
 //Global variables
@@ -69,7 +71,7 @@ void setup() {
   Serial.println("setup finished");
 }
 
-void realLoop() { //Real loop, change name for testloop below
+void realloop() { //Real loop, change name for testloop below
 //Below is the basis for the running music generation loop
 //Setup, change values
 
@@ -86,7 +88,7 @@ void loop(){ //Test loop, a clean small loop that you enter by changing the name
     // Call whatever test loop you need here, write tests in src and import here
     //Should be inaccessible to realloop
     if (first_runtime){
-        tests::mainTestChannelFunctionalities();
+        tests::mainTestPwmIndependence();
     }
     first_runtime = false;
 }
@@ -127,10 +129,6 @@ namespace tests {
         placeDacPortOnPins();
         delay(blink_interval);
         dac_port++;
-    }
-
-    void mainTestAudioSynthesis() {
-        //test audio synthesis functions
     }
 
     void mainTestChannelFunctionalities() {
@@ -190,6 +188,17 @@ namespace tests {
             reinitialiseMasterChannel(&session_master_channel);
             debug::DumpMasterData(&session_master_channel);
         }
+    }
+    void mainTestPwmIndependence(){ 
+        /*
+        Tests and demonstrates the functionality of analogue write, as well as its code independence.
+        */
+        analogWriteFrequency(4); //frequency
+        analogWrite(DAC_CLOCK_PIN, 1); // pin, scaling factor x
+        for(;;){
+            Serial.println("code is theoretically frozen on this line! If light is blinking pwm is runtime independent");
+        } //runtime independent
+
     }
 }
 namespace debug {
