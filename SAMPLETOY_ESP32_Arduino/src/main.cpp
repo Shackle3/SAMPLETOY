@@ -7,10 +7,12 @@ extern "C"{ //C header inclusions
     #include "SampletoyUtility.h"
     #include "SampletoyIO.h"
     #include "SampletoyChannel.h"
+    #include "SampletoyPlaylist.h"
 }
 
 const int DAC_OUT_BUS[] {5, 19, 22, 26, 4, 18, 21, 25}; //@todo remove these, opt for different system wherein information is dealt
 #define DAC_CLOCK_PIN 23
+#define DAC_CLOCK_FREQ 44100
 #define DAC_BUS_WIDTH 8
 #define INTERRUPT_PIN_SEND_NEXT_SAMPLE_TO_DAC 25
 #define DAC_BUFFER_SIZE 64
@@ -57,7 +59,7 @@ namespace tests{
     void mainTestChannelFunctionalities();
     void mainTestPwmIndependence();
     void IRAM_ATTR mainTestInterruptFunctionality();
-    void pwmInterruptFunctionalityTest();
+    void mainReportInterruptOnPin();
 }
 
 //interrupt declarations
@@ -85,13 +87,13 @@ void setup() {
 
     //setup DAC signal
   pinMode(DAC_CLOCK_PIN, OUTPUT);
-  analogWriteFrequency(44100); //initialise interrupt clock
+  analogWriteFrequency(DAC_CLOCK_FREQ); //initialise interrupt clock
   analogWrite(DAC_CLOCK_PIN, 1); // assign clock
     //setup interrupt reciever pin for sending samples to dac
   pinMode(INTERRUPT_PIN_SEND_NEXT_SAMPLE_TO_DAC, INPUT_PULLUP);
   
   //attach interrupts, set to interrupt when falling signal. Use Pullup across project for consistency
-  attachInterrupt(INTERRUPT_PIN_SEND_NEXT_SAMPLE_TO_DAC, interrupts::dacLoadNextSignalInterrupt, FALLING);
+  attachInterrupt(INTERRUPT_PIN_SEND_NEXT_SAMPLE_TO_DAC, tests::mainTestInterruptFunctionality, FALLING);
 
   //Initialise Channels
   for (Channel &this_channel : sub_channels){
@@ -132,7 +134,7 @@ void loop(){ //Test loop, a clean small loop that you enter by changing the name
     if (first_loop_iteration){
         
     }
-    tests::pwmInterruptFunctionalityTest();
+    tests::mainReportInterruptOnPin();
     first_loop_iteration = false;
 }
 
@@ -276,21 +278,23 @@ namespace tests {
 
     }
 
-    void pwmInterruptFunctionalityTest(){ 
+    void mainReportInterruptOnPin(){ 
         /*
         Our goal here to to check, that pin PWM signals can trigger interrupts by routing the DAC Clock pin to the DAC interrupt, and
         successfully recieving/performing an interrupt operation.
 
         Mind you interrupts are finniky, at the moment it reports like thousands of interrupts
         */
-        if (first_loop_iteration){ //DAC CLOCK blinks every 0.25 seconds. 
-            analogWriteFrequency(4); //frequency
-            analogWrite(DAC_CLOCK_PIN, 1); // pin, scaling factor x
+        if (first_loop_iteration){ //DAC CLOCK blinks every 0.25 seconds.
+            //analogWriteFrequency(4);
             Serial.println("first runtime check successful");
         }
 
         if (debug::interrupt_reported){
-            Serial.printf("button pressed %u times... \n" , temp_generic);
+            if(temp_generic % 44100 == 0){
+                Serial.printf("button pressed %u times... \n" , temp_generic);
+            }
+            //Serial.printf("button pressed %u times... \n" , temp_generic);
             debug::interrupt_reported = false;
         }
         //note. THIS WORKS HOLY SHIT YES!!!!
@@ -333,6 +337,6 @@ namespace debug {
 namespace interrupts{
     /// DO NOTE THAT INTERRUPTS CANT DO PRINT, so i have found out. 
     void IRAM_ATTR dacLoadNextSignalInterrupt(){
-        placeDacPortOnPins(); //or some shit like this when i actually implement it
+        //placeDacPortOnPins(); //or some shit like this when i actually implement it
     }
 }

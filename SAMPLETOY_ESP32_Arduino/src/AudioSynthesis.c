@@ -8,22 +8,9 @@
 //
 
 #include "AudioSynthesis.h"
-#include "math.h" //math functions, pi
-#include "stdint.h" //uint_8
-
-//DEFINING GLOBAL CONSTANTS
-
-//macros
-//
-//Max possible synthesizers in playlist
-#define MAX_SYNTHESIZERS 16 //Current supported max size (from code) is 255
-//Setting time for once sample (double)
-#define SAMPLE_DURATION 0.00002267573 //SAMPLE RATE IS FIXED TO 44.100 khz, WILL CAUSE BUGS IF CHANGED
-//subdivisions per beat, so for the example of 4, it means the shortest note is a semiquaver
-#define SUBDIVISIONS_PER_BEAT 4
-//Pi
-#define PI 3.1415926535897932384626433832795028841971693993751058209749445923078164062
-// @ todo combine all of these constants into one header
+#include "SampletoyMacros.h"
+#include <math.h> //math functions, pi
+#include <stdint.h> //uint_8
 
 //const variables
 //
