@@ -44,15 +44,13 @@ namespace SampletoyMain{
     void switchRuntimeLogic();
 }
 
-void placeDacPortOnPins();
-void sumChannelsOnDacPort();
-
 //test declarations
 namespace debug{
     void DumpChannelData(const Channel *target, uint8_t channel_number);
     void DumpMasterData(MasterChannel *target);
     bool interrupt_reported = false;
 }
+
 namespace tests{
     void mainTestCounterOverDACBus(double timeFactor);
     void mainTestAudioSynthesis();

@@ -2,9 +2,12 @@
 // Created by Fabian Uni on 4/09/2024.
 //
 
+//@todo depending on final solution, could be seperate files
+
 #ifndef SAMPLETOY_ESP32_ARDUINO_SAMPLETOYPLAYLIST_H
 #include <stdint.h>
 #include "AudioSynthesis.h"
+#include "SampletoyChannel.h"
 #include "SampletoyMacros.h"
 #define SAMPLETOY_ESP32_ARDUINO_SAMPLETOYPLAYLIST_H
 
@@ -33,12 +36,24 @@ stored in this list see Midievent struct
 midinote miditrack[64]; //@todo will need to increase or decrease allocation
 } miditrack;
 
+typedef struct Track{
+    /*
+    A unique instance within the playlist, contains track information
+    */
+   Channel track_channel;
+   generator track_source;
+   miditrack track_midi;
+} track;
+
 typedef struct Playlist{
+    /*
+    A single instance, gateway from which the main loop accesses information within the playlist heirarchy
+    */
+
     //programmable properties
     uint8_t bpm;
     // SUBDIVISIONS_PER_BEAT = 4 (SampletoyMacros.h)
-    
-
+    track playlist_tracks[MAX_CHANNELS_OR_TRACKS]; 
 } playlist;
 
 #endif //SAMPLETOY_ESP32_ARDUINO_SAMPLETOYPLAYLIST_H

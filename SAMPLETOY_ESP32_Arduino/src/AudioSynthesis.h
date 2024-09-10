@@ -21,16 +21,14 @@ extern float samplePerSmallestSubdivision;
  *  1/SUBDIVISIONS_PER_BEAT beats is the smallest subdivision
  */
 
-struct MathSynthHost{
+typedef struct MathSynthHost{
     unsigned int samplesHeldFor; // num of samples the note is held for
     double notePeriod; // 1/frequency of that note, time it takes for one oscillation
     float noteAmplitude; // 1 corresponds to 0 db, @todo logarithmic
     uint8_t waveType; // Setting as to which math wave should be modelled
-};
+} mathsynth;
 
-typedef struct MathSynthHost mathsynth;
-
-extern mathsynth mathSynthInstances[];
+extern mathsynth mathSynthInstances[]; //@todo remove
 /*
  * Array of math synthesisers, see above for struct implementation
  *
@@ -105,4 +103,11 @@ void cleanup_finished_midi();
  */
 
 void initialise_the_mathsynths();
+
+//todo complete implementation of changes to audiosynthesis
+typedef struct Generator{
+    uint8_t type;
+} generator;
+
+
 #endif //SAMPLETOYC_AUDIOSYNTHESIS_H
