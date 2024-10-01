@@ -13,17 +13,6 @@ extern "C"{ //C header inclusions
 }
 
 const int DAC_OUT_BUS[] {5, 19, 22, 26, 4, 18, 21, 25}; //@todo remove these, opt for different system wherein information is dealt
-#define DAC_CLOCK_PIN 23
-#define DAC_CLOCK_FREQ 44100
-#define DAC_BUS_WIDTH 8
-#define INTERRUPT_PIN_SEND_NEXT_SAMPLE_TO_DAC 25
-#define DAC_BUFFER_SIZE 64
-/// PIN 25 IS DAC CLOCK BIT, it controls which byte audio information is placed onto
-/// We have limited IO pins, therefore i'm not allocating a full 16 bit wide bus, but this method. Still need to implement, obvs this requires flipflops
-#define TOTAL_CHANNELS 16
-#define MAX_DB_VALUE 65535 //max val of uint_16
-#define EDIT false
-#define PLAY true
 // put function declarations here:
 namespace SampletoyMain{
     void switchRuntimeLogic();
@@ -44,6 +33,7 @@ namespace tests{
     void IRAM_ATTR mainTestInterruptFunctionality();
     void mainReportInterruptOnPin();
     void mainTestMathSynthesisPipeline();
+    void mainTestPlaylistFunctionalities();
 }
 
 //interrupt declarations
@@ -101,7 +91,7 @@ void setup() {
 }
 
 void realloop() { //Real loop, change name for testloop below
-if (runtime_assets::loop_mode_play_edit){ //true, logic is playing
+if (runtime_assets::loop_mode_play_edit){ //true, PLAY environment is playing
 //Setup, change values
 
 //Calculate Synth values, update samples
@@ -110,8 +100,9 @@ if (runtime_assets::loop_mode_play_edit){ //true, logic is playing
 
 //Post, cleanup
 }
-else{
-    //Setup, change values
+else{ //EDIT environment
+
+//Setup, change values
 
 //Calculate Synth values, update samples
 
@@ -126,9 +117,8 @@ void loop(){ //Test loop, a clean small loop that you enter by changing the name
     // Call whatever test loop you need here, write tests in src and import here
     //Should be inaccessible to realloop
     if (runtime_assets::first_loop_iteration){
-        
+        tests::mainTestPlaylistFunctionalities();
     }
-    tests::mainReportInterruptOnPin();
     runtime_assets::first_loop_iteration = false;
 }
 
@@ -166,7 +156,7 @@ namespace SampletoyInterrupts{
 
 }
 
-//Tests definitions
+//Tests definitions #remove in final version
 namespace tests {
     void mainTestCounterOverDACBus(double timeFactor) {
         /*
@@ -184,7 +174,61 @@ namespace tests {
         //dac_port++;
     }
 
-    void mainTestChannelFunctionalities() {
+    void mainTestPwmIndependence(){ 
+        /*
+        Tests and demonstrates the functionality of analogue write, as well as its code independence.
+        */
+        analogWriteFrequency(4); //frequency
+        analogWrite(DAC_CLOCK_PIN, 1); // pin, scaling factor x
+        for(;;){
+            Serial.println("code is theoretically frozen on this line! If light is blinking pwm is runtime independent");
+        } //runtime independent
+
+    }
+
+    void mainReportInterruptOnPin(){ 
+        /*
+        Our goal here to to check, that pin PWM signals can trigger interrupts by routing the DAC Clock pin to the DAC interrupt, and
+        successfully recieving/performing an interrupt operation.
+
+        Mind you interrupts are finniky, at the moment it reports like thousands of interrupts
+        */
+        if (runtime_assets::first_loop_iteration){ //DAC CLOCK blinks every 0.25 seconds.
+            //analogWriteFrequency(4);
+            Serial.println("first runtime check successful");
+        }
+
+        if (debug::interrupt_reported){
+            if(runtime_assets::temp_generic % 44100 == 0){
+                Serial.printf("button pressed %u times... \n" , runtime_assets::temp_generic);
+            }
+            //Serial.printf("button pressed %u times... \n" , temp_generic);
+            debug::interrupt_reported = false;
+        }
+        //note. THIS WORKS HOLY SHIT YES!!!!
+
+    }
+
+    void mainTestMidiPlaylistDebugSetup1(){
+        //Creates sustained note on C4, lasts 1 second on, one second off
+    }
+
+    void mainTestMathSynthesisPipeline(){
+        //setup midi information
+    }
+
+    void mainTestPlaylistFunctionalities(){
+            //test 1
+        Serial.println("test1: Testing generic empty really is generic empty");
+        // create empty event, compare to generic empty, make sure they're the same
+        midinote debug_empty_midi_event = generateMidiEventFromVariables(0, 0, 0);
+        Serial.printf("%u == %u \n", midinoteReturnTimePointer(&debug_empty_midi_event), midinoteReturnTimePointer(&empty_midi_note_generic));
+        Serial.printf("%u == %u \n", midinoteReturnLength(&debug_empty_midi_event), midinoteReturnLength(&empty_midi_note_generic));
+        Serial.printf("%u == %u \n", midinoteReturnMidiCode(&debug_empty_midi_event), midinoteReturnMidiCode(&empty_midi_note_generic));
+        Serial.println("format debug = generic, any mismatches are bugs, end test1");
+    }
+
+     void mainTestChannelFunctionalities() {
         /*
         Tests that the channels, and their methods are implemented correctly with all the pointer bullshit i wrote in there.
         Mostly just editing and reading out of the memory
@@ -245,45 +289,6 @@ namespace tests {
             reinitialiseMasterChannel(&runtime_assets::session_master_channel);
             debug::DumpMasterData(&runtime_assets::session_master_channel);
         }
-    }
-
-    void mainTestPwmIndependence(){ 
-        /*
-        Tests and demonstrates the functionality of analogue write, as well as its code independence.
-        */
-        analogWriteFrequency(4); //frequency
-        analogWrite(DAC_CLOCK_PIN, 1); // pin, scaling factor x
-        for(;;){
-            Serial.println("code is theoretically frozen on this line! If light is blinking pwm is runtime independent");
-        } //runtime independent
-
-    }
-
-    void mainReportInterruptOnPin(){ 
-        /*
-        Our goal here to to check, that pin PWM signals can trigger interrupts by routing the DAC Clock pin to the DAC interrupt, and
-        successfully recieving/performing an interrupt operation.
-
-        Mind you interrupts are finniky, at the moment it reports like thousands of interrupts
-        */
-        if (runtime_assets::first_loop_iteration){ //DAC CLOCK blinks every 0.25 seconds.
-            //analogWriteFrequency(4);
-            Serial.println("first runtime check successful");
-        }
-
-        if (debug::interrupt_reported){
-            if(runtime_assets::temp_generic % 44100 == 0){
-                Serial.printf("button pressed %u times... \n" , runtime_assets::temp_generic);
-            }
-            //Serial.printf("button pressed %u times... \n" , temp_generic);
-            debug::interrupt_reported = false;
-        }
-        //note. THIS WORKS HOLY SHIT YES!!!!
-
-    }
-
-    void mainTestMathSynthesisPipeline(){
-        //setup midi information
     }
 
     void IRAM_ATTR mainTestInterruptFunctionality(){
