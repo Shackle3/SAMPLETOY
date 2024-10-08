@@ -69,6 +69,8 @@ typedef struct Playlist{
     int samples_per_subdivision;
     //last output of all channels in this playlist, pair of uint32
     upair32 subchannel_sample_outputs[MAX_CHANNELS_OR_TRACKS];
+    //counts how many subdivisions the note is held for, saves processing power
+    uint8_t elapsed_length_on_midievent[MAX_CHANNELS_OR_TRACKS];
 
     //time signature not added, may add further down line
 

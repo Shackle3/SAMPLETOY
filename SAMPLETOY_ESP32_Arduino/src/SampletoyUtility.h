@@ -19,4 +19,6 @@ typedef struct UnsignedPair_32{
     uint32_t int2;
 }upair32;
 
+extern upair32 zero_pair32;
+
 #endif //SRC_SAMPLETOYUTILITY_H

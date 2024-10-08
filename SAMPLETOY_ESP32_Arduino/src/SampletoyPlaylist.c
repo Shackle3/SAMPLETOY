@@ -48,11 +48,15 @@ int recalculateSamplesPerSubdivision(uint8_t new_bpm){
 }
 
 void reinitialisePlaylist(){
-    playlist_instance->bpm = 140;
-    playlist_instance->samples_per_subdivision = recalculateSamplesPerSubdivision(140);
+    playlist_instance->bpm = DEFAULT_BPM; //reset bpm to default
+    playlist_instance->samples_per_subdivision = recalculateSamplesPerSubdivision(DEFAULT_BPM);
     playlist_instance->playhead_position_subdivision = 0;
     playlist_instance->track_length_beats = 16 * 4; //16 bars
+    for (int channel_or_track; channel_or_track < MAX_CHANNELS_OR_TRACKS; channel_or_track++){
+        playlist_instance->subchannel_sample_outputs[channel_or_track] = zero_pair32;
+        playlist_instance->elapsed_length_on_midievent[channel_or_track] = 0;
+    }
 }
 
-void 
+void //@todo write the code that takes current playhead, and 
 

@@ -236,13 +236,15 @@ namespace tests {
         Tests that the channels, and their methods are implemented correctly with all the pointer bullshit i wrote in there.
         Mostly just editing and reading out of the memory
         */
+        channel sub_channels[TOTAL_CHANNELS]; //legacy implementation, but useful for testing
+
         if (runtimeAssets::first_loop_iteration) {
             Serial.println("running tests on the implementation and functionality of SampletoyChannel.c/h");
             Serial.println("Beginning tests on functions:");
             delay(5000);
             //Assign increasing values for different channels using SET, then print it to terminal using GET. Sweep all channels
             int counter = 0;            
-            for (Channel &channel_target : runtimeAssets::sub_channels){
+            for (Channel &channel_target : sub_channels){
                 setChannelLevel(&channel_target, counter, counter + 1);
                 counter = counter + 2;
                 setChannelGain(&channel_target, counter);
@@ -255,16 +257,16 @@ namespace tests {
             }
             //unique values on all channels
             int channel_counter = 1;
-            for (Channel &this_channel : runtimeAssets::sub_channels){
+            for (Channel &this_channel : sub_channels){
                 debug::DumpChannelData(&this_channel, channel_counter);
                 channel_counter++;
             }
             //Reset
-            for (Channel &this_channel : runtimeAssets::sub_channels){
+            for (Channel &this_channel : sub_channels){
                 reinitialiseChannel(&this_channel);
             }
             channel_counter = 1;
-            for (Channel &this_channel : runtimeAssets::sub_channels){
+            for (Channel &this_channel : sub_channels){
                 debug::DumpChannelData(&this_channel, channel_counter);
                 channel_counter++;
             }

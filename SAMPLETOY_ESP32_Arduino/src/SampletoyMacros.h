@@ -28,6 +28,7 @@
 //subdivisions per beat, so for the example of 4, it means the shortest note is a semiquaver
 #define SUBDIVISIONS_PER_BEAT 4
 #define MIDITRACKARRAYSIZE 64
+#define DEFAULT_BPM 140
 
 //AUDIO SYNTHESIS MACROS
 //
