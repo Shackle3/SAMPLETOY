@@ -14,17 +14,35 @@ extern "C"{ //C header inclusions
 
 const int DAC_OUT_BUS[] {5, 19, 22, 26, 4, 18, 21, 25}; //@todo remove these, opt for different system wherein information is dealt
 // put function declarations here:
-namespace SampletoyMain{
+namespace sampletoyMain{
     void switchRuntimeLogic();
 }
 
-//test declarations
-namespace debug{
-    void DumpChannelData(const Channel *target, uint8_t channel_number);
-    void DumpMasterData(MasterChannel *target);
-    bool interrupt_reported = false;
+//interrupt declarations
+namespace interrupts{
+    void IRAM_ATTR dacLoadNext();
 }
 
+namespace runtimeAssets{
+    //debug
+    bool first_loop_iteration = true; //debug value used to display a message on the first loop of tests
+    int temp_generic = 0;
+    bool temp_in_use = false;
+
+    //control variables
+    bool loop_mode_play_edit = EDIT; //initialise in edit
+
+    //important, functional, memory allocations
+    playlist instance_playlist;
+            //add bpm 140 to playlist
+    masterchannel session_master_channel;
+    channel sub_channels[TOTAL_CHANNELS];
+    uint16_t dac_buffer[DAC_BUFFER_SIZE] = {0};
+
+}
+//@todo LABEL YOUR TESTS IN TERMINAL
+
+//test declarations
 namespace tests{
     void mainTestCounterOverDACBus(double timeFactor);
     void mainTestAudioSynthesis();
@@ -36,29 +54,12 @@ namespace tests{
     void mainTestPlaylistFunctionalities();
 }
 
-//interrupt declarations
-namespace interrupts{
-    void IRAM_ATTR dacLoadNextSignalInterrupt();
+//debugs, tests that should be removed when doing a release build
+namespace debug{
+    void DumpChannelData(const Channel *target, uint8_t channel_number);
+    void DumpMasterData(const MasterChannel *target);
+    bool interrupt_reported = false;
 }
-
-namespace runtime_assets{
-    //debug
-    bool first_loop_iteration = true; //debug value used to display a message on the first loop of tests
-    int temp_generic = 0;
-    bool temp_in_use = false;
-
-    //control variables
-    bool loop_mode_play_edit = EDIT; //initialise in edit
-
-    //runtime assets/variables, memory allocations
-    playlist instance_playlist;
-            //add bpm 140 to playlist
-    masterchannel session_master_channel;
-    channel sub_channels[TOTAL_CHANNELS];
-    uint16_t dac_buffer[DAC_BUFFER_SIZE] = {0};
-
-}
-//@todo LABEL YOUR TESTS IN TERMINAL
 
 void setup() {
   Serial.begin(115200); //setup baud
@@ -77,7 +78,7 @@ void setup() {
   pinMode(INTERRUPT_PIN_SEND_NEXT_SAMPLE_TO_DAC, INPUT_PULLUP);
   
   //attach interrupts, set to interrupt when falling signal. Use Pullup across project for consistency
-  attachInterrupt(INTERRUPT_PIN_SEND_NEXT_SAMPLE_TO_DAC, tests::mainTestInterruptFunctionality, FALLING);
+  attachInterrupt(INTERRUPT_PIN_SEND_NEXT_SAMPLE_TO_DAC, interrupts::dacLoadNextSignalInterrupt, FALLING);
 
   //Initialise Channels
   for (Channel &this_channel : runtime_assets::sub_channels){
@@ -126,7 +127,7 @@ void loop(){ //Test loop, a clean small loop that you enter by changing the name
 // put function definitions here:
 //mititage implementation into this section, to only those which are runtime
 
-namespace SampletoyMain{
+namespace sampletoyMain{
     void switchRuntimeLogic(){
         /*
         @brief changes the main loop to go from writing mode to playing mode
@@ -326,7 +327,7 @@ namespace debug {
 
 namespace interrupts{
     /// DO NOTE THAT INTERRUPTS CANT DO PRINT, so i have found out. 
-    void IRAM_ATTR dacLoadNextSignalInterrupt(){
+    void IRAM_ATTR dacLoadNext(){
         //placeDacPortOnPins(); //or some shit like this when i actually implement it
     }
 }
