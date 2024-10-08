@@ -36,7 +36,23 @@ void reinitialiseMiditrack(miditrack* target){
 
 }
 
-void reinitialisePlaylist(){
-    playlist_instance->bpm = 140;   
+//playlist methods
+int recalculateSamplesPerSubdivision(uint8_t new_bpm){
+    //function is kind of inefficient on memory, but i'm assuming its not happening in runtime so i'ma write it more readable
+    uint16_t subdivisions_per_minute = new_bpm * SUBDIVISIONS_PER_BEAT;
+    float sub_per_second = subdivisions_per_minute/60;
+    float time_for_one_sub = 1/sub_per_second;
+    //typecast time for one subdivision into int, after turning it into x number of samples that fit into it
+    int samples_per_sub = (int) time_for_one_sub / SAMPLE_DURATION;
+    return samples_per_sub;
 }
+
+void reinitialisePlaylist(){
+    playlist_instance->bpm = 140;
+    playlist_instance->samples_per_subdivision = recalculateSamplesPerSubdivision(140);
+    playlist_instance->playhead_position_subdivision = 0;
+    playlist_instance->track_length_beats = 16 * 4; //16 bars
+}
+
+void 
 

@@ -36,7 +36,7 @@ const double NOTE_FREQUENCIES[] = {27.5, 29.135, 30.868, 32.703, 34.648, 36.708,
 //
 
 //initialising on bpm is set to 130
-float samplePerSmallestSubdivision = 1/((130/60) * SUBDIVISIONS_PER_BEAT * SAMPLE_DURATION);
+//float samplePerSmallestSubdivision = 1/((130/60) * SUBDIVISIONS_PER_BEAT * SAMPLE_DURATION);
 
 /// List of currently playing notes (nDFAWInfo[i] != 0),
 /// how long (in samples) each note will be held for, and at what duration one phase has in time

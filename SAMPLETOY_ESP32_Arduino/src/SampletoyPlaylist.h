@@ -9,6 +9,7 @@
 #include "AudioSynthesis.h"
 #include "SampletoyChannel.h"
 #include "SampletoyMacros.h"
+#include "SampletoyUtility.h"
 #define SAMPLETOY_ESP32_ARDUINO_SAMPLETOYPLAYLIST_H
 
 typedef struct MidiEvent{
@@ -44,7 +45,7 @@ typedef struct Track{
     /*
     A unique instance within the playlist, contains track information
     */
-   Channel track_channel;
+   channel track_channel;
    generator track_source;
    miditrack track_midi;
 } track;
@@ -52,13 +53,25 @@ typedef struct Track{
 typedef struct Playlist{
     /*
     A single instance, gateway from which the main loop accesses information within the playlist heirarchy
+
+    Responsible for telling the synthesisers when to play what
     */
 
     //programmable properties
     uint8_t bpm;
-    // SUBDIVISIONS_PER_BEAT = 4 (SampletoyMacros.h)
+    // memory allocation for all the tracks
     track playlist_tracks[MAX_CHANNELS_OR_TRACKS]; 
-    uint16_t track_length;
+    //how long the project is in beats
+    uint16_t track_length_beats;
+    //playhead position
+    uint32_t playhead_position_subdivision;
+    //number of samples in one subdivision in this playlist
+    int samples_per_subdivision;
+    //last output of all channels in this playlist, pair of uint32
+    upair32 subchannel_sample_outputs[MAX_CHANNELS_OR_TRACKS];
+
+    //time signature not added, may add further down line
+
 } playlist;
 
 extern const midinote empty_midi_note_generic;

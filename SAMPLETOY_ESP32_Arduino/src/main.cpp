@@ -36,7 +36,7 @@ namespace runtimeAssets{
     playlist instance_playlist;
             //add bpm 140 to playlist
     masterchannel session_master_channel;
-    channel sub_channels[TOTAL_CHANNELS];
+    // channel sub_channels[TOTAL_CHANNELS]; removed as of implementation of playlist
     uint16_t dac_buffer[DAC_BUFFER_SIZE] = {0};
 
 }
@@ -78,21 +78,21 @@ void setup() {
   pinMode(INTERRUPT_PIN_SEND_NEXT_SAMPLE_TO_DAC, INPUT_PULLUP);
   
   //attach interrupts, set to interrupt when falling signal. Use Pullup across project for consistency
-  attachInterrupt(INTERRUPT_PIN_SEND_NEXT_SAMPLE_TO_DAC, interrupts::dacLoadNextSignalInterrupt, FALLING);
+  attachInterrupt(INTERRUPT_PIN_SEND_NEXT_SAMPLE_TO_DAC, interrupts::dacLoadNext, FALLING);
 
   //Initialise Channels
-  for (Channel &this_channel : runtime_assets::sub_channels){
+  for (Channel &this_channel : runtimeAssets::sub_channels){
       reinitialiseChannel(&this_channel);
   }
 
-  reinitialiseMasterChannel(&runtime_assets::session_master_channel);
+  reinitialiseMasterChannel(&runtimeAssets::session_master_channel);
   //Initialise IO
 
   Serial.println("setup finished");
 }
 
 void realloop() { //Real loop, change name for testloop below
-if (runtime_assets::loop_mode_play_edit){ //true, PLAY environment is playing
+if (runtimeAssets::loop_mode_play_edit){ //true, PLAY environment is playing
 //Setup, change values
 
 //Calculate Synth values, update samples
@@ -111,16 +111,16 @@ else{ //EDIT environment
 
 //Post, cleanup
 }
-    runtime_assets::first_loop_iteration = false;
+    runtimeAssets::first_loop_iteration = false;
 }
 
 void loop(){ //Test loop, a clean small loop that you enter by changing the name of the function. Its bad, i know :(
     // Call whatever test loop you need here, write tests in src and import here
     //Should be inaccessible to realloop
-    if (runtime_assets::first_loop_iteration){
+    if (runtimeAssets::first_loop_iteration){
         tests::mainTestPlaylistFunctionalities();
     }
-    runtime_assets::first_loop_iteration = false;
+    runtimeAssets::first_loop_iteration = false;
 }
 
 
@@ -132,12 +132,12 @@ namespace sampletoyMain{
         /*
         @brief changes the main loop to go from writing mode to playing mode
         */
-        if (runtime_assets::loop_mode_play_edit){
-            runtime_assets::loop_mode_play_edit = EDIT;
-            runtime_assets::first_loop_iteration = true;
+        if (runtimeAssets::loop_mode_play_edit){
+            runtimeAssets::loop_mode_play_edit = EDIT;
+            runtimeAssets::first_loop_iteration = true;
         } else {
-            runtime_assets::loop_mode_play_edit = PLAY;
-            runtime_assets::first_loop_iteration = true;
+            runtimeAssets::loop_mode_play_edit = PLAY;
+            runtimeAssets::first_loop_iteration = true;
         }
     }
 }
@@ -164,10 +164,10 @@ namespace tests {
         Somewhat redundant function now, checks that the output pins are truely outputting and unlinked
         */
         //test pinout
-        if (runtime_assets::first_loop_iteration) {
+        if (runtimeAssets::first_loop_iteration) {
             Serial.println("running test counter over DAC pins, pins show boolean value of a counting uint8 ");
             Serial.println("output pins in LSB to MSB order is 5, 19, 22, 26, 4, 18, 21, 25");
-            runtime_assets::first_loop_iteration = false; // don't display message again
+            runtimeAssets::first_loop_iteration = false; // don't display message again
         }
         double blink_interval = 25 * timeFactor;
         placeDacPortOnPins();
@@ -194,14 +194,14 @@ namespace tests {
 
         Mind you interrupts are finniky, at the moment it reports like thousands of interrupts
         */
-        if (runtime_assets::first_loop_iteration){ //DAC CLOCK blinks every 0.25 seconds.
+        if (runtimeAssets::first_loop_iteration){ //DAC CLOCK blinks every 0.25 seconds.
             //analogWriteFrequency(4);
             Serial.println("first runtime check successful");
         }
 
         if (debug::interrupt_reported){
-            if(runtime_assets::temp_generic % 44100 == 0){
-                Serial.printf("button pressed %u times... \n" , runtime_assets::temp_generic);
+            if(runtimeAssets::temp_generic % 44100 == 0){
+                Serial.printf("button pressed %u times... \n" , runtimeAssets::temp_generic);
             }
             //Serial.printf("button pressed %u times... \n" , temp_generic);
             debug::interrupt_reported = false;
@@ -220,13 +220,15 @@ namespace tests {
 
     void mainTestPlaylistFunctionalities(){
             //test 1
-        Serial.println("test1: Testing generic empty really is generic empty");
+        Serial.println("test1: Testing generic empty midi event really is generic empty");
         // create empty event, compare to generic empty, make sure they're the same
         midinote debug_empty_midi_event = generateMidiEventFromVariables(0, 0, 0);
         Serial.printf("%u == %u \n", midinoteReturnTimePointer(&debug_empty_midi_event), midinoteReturnTimePointer(&empty_midi_note_generic));
         Serial.printf("%u == %u \n", midinoteReturnLength(&debug_empty_midi_event), midinoteReturnLength(&empty_midi_note_generic));
         Serial.printf("%u == %u \n", midinoteReturnMidiCode(&debug_empty_midi_event), midinoteReturnMidiCode(&empty_midi_note_generic));
-        Serial.println("format debug = generic, any mismatches are bugs, end test1");
+        Serial.println("format debug = generic, any mismatches are bugs, end test1 \n");
+            //test 2
+        Serial.println("test2: ");
     }
 
      void mainTestChannelFunctionalities() {
@@ -234,13 +236,13 @@ namespace tests {
         Tests that the channels, and their methods are implemented correctly with all the pointer bullshit i wrote in there.
         Mostly just editing and reading out of the memory
         */
-        if (runtime_assets::first_loop_iteration) {
+        if (runtimeAssets::first_loop_iteration) {
             Serial.println("running tests on the implementation and functionality of SampletoyChannel.c/h");
             Serial.println("Beginning tests on functions:");
             delay(5000);
             //Assign increasing values for different channels using SET, then print it to terminal using GET. Sweep all channels
             int counter = 0;            
-            for (Channel &channel_target : runtime_assets::sub_channels){
+            for (Channel &channel_target : runtimeAssets::sub_channels){
                 setChannelLevel(&channel_target, counter, counter + 1);
                 counter = counter + 2;
                 setChannelGain(&channel_target, counter);
@@ -253,48 +255,48 @@ namespace tests {
             }
             //unique values on all channels
             int channel_counter = 1;
-            for (Channel &this_channel : runtime_assets::sub_channels){
+            for (Channel &this_channel : runtimeAssets::sub_channels){
                 debug::DumpChannelData(&this_channel, channel_counter);
                 channel_counter++;
             }
             //Reset
-            for (Channel &this_channel : runtime_assets::sub_channels){
+            for (Channel &this_channel : runtimeAssets::sub_channels){
                 reinitialiseChannel(&this_channel);
             }
             channel_counter = 1;
-            for (Channel &this_channel : runtime_assets::sub_channels){
+            for (Channel &this_channel : runtimeAssets::sub_channels){
                 debug::DumpChannelData(&this_channel, channel_counter);
                 channel_counter++;
             }
             Serial.println("testing master in 5 seconds...");
             delay(5000);
             //run same test on Master
-            masterSetLevel(&runtime_assets::session_master_channel, counter * 10, (counter + 1) * 10);
+            masterSetLevel(&runtimeAssets::session_master_channel, counter * 10, (counter + 1) * 10);
             counter = counter + 2;
             Serial.println("intermediate test on setlevel");
-            debug::DumpMasterData(&runtime_assets::session_master_channel);
+            debug::DumpMasterData(&runtimeAssets::session_master_channel);
             //testing first of the two add to level functions
-            resetMasterLevelToMiddle(&runtime_assets::session_master_channel);
-            addSignalToMasterLevelLeft(&runtime_assets::session_master_channel, counter);
+            resetMasterLevelToMiddle(&runtimeAssets::session_master_channel);
+            addSignalToMasterLevelLeft(&runtimeAssets::session_master_channel, counter);
             counter++;
-            addSignalToMasterLevelRight(&runtime_assets::session_master_channel, counter);
+            addSignalToMasterLevelRight(&runtimeAssets::session_master_channel, counter);
             counter++;
-            masterSetGain(&runtime_assets::session_master_channel, counter);
+            masterSetGain(&runtimeAssets::session_master_channel, counter);
             counter++;
-            masterSetPrescale(&runtime_assets::session_master_channel, counter);
+            masterSetPrescale(&runtimeAssets::session_master_channel, counter);
             counter++;
-            masterSetMS(&runtime_assets::session_master_channel, counter);
+            masterSetMS(&runtimeAssets::session_master_channel, counter);
             counter++;
-            debug::DumpMasterData(&runtime_assets::session_master_channel);
+            debug::DumpMasterData(&runtimeAssets::session_master_channel);
             //reset, check reset is correct
-            reinitialiseMasterChannel(&runtime_assets::session_master_channel);
-            debug::DumpMasterData(&runtime_assets::session_master_channel);
+            reinitialiseMasterChannel(&runtimeAssets::session_master_channel);
+            debug::DumpMasterData(&runtimeAssets::session_master_channel);
         }
     }
 
     void IRAM_ATTR mainTestInterruptFunctionality(){
-        runtime_assets::temp_in_use = true;
-        runtime_assets::temp_generic++;
+        runtimeAssets::temp_in_use = true;
+        runtimeAssets::temp_generic++;
         // Serial.printf("button pressed %u times... \n" , temp_generic); ILLEGAL, interrupt cannot output to serial
         // probably do to its memory allocation :/
         debug::interrupt_reported = true;

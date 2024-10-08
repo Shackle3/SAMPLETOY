@@ -13,4 +13,10 @@
 //Returns the bit at bitposition for any given "number" in base2 representation.
 int getBitinInt(int number, int bitposition);
 
+//adding pairs to C
+typedef struct UnsignedPair_32{
+    uint32_t int1;
+    uint32_t int2;
+}upair32;
+
 #endif //SRC_SAMPLETOYUTILITY_H
