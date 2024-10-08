@@ -40,7 +40,7 @@ float samplePerSmallestSubdivision = 1/((130/60) * SUBDIVISIONS_PER_BEAT * SAMPL
 
 /// List of currently playing notes (nDFAWInfo[i] != 0),
 /// how long (in samples) each note will be held for, and at what duration one phase has in time
-mathsynth mathSynthInstances[MAX_SYNTHESIZERS]; //size max synths x 2
+mathsynth mathSynthInstances[MAX_CHANNELS_OR_TRACKS]; //size max synths x 2
 /*
  * For implementation see MathSynthHost struct in Audiosynthesis.h
  *
@@ -48,7 +48,7 @@ mathsynth mathSynthInstances[MAX_SYNTHESIZERS]; //size max synths x 2
  * set noteDurationSamples[i] back to 0
  */
 
-unsigned int currentPlayingSampleNumber[MAX_SYNTHESIZERS];
+unsigned int currentPlayingSampleNumber[MAX_CHANNELS_OR_TRACKS];
 // Index corresponds to synth
 
 //Functions:
@@ -104,7 +104,7 @@ double math_wave_gen(uint8_t synthesiserNumber){
 }
 
 void cleanup_finished_midi(){
-    for (uint8_t synth = 0; synth < MAX_SYNTHESIZERS; synth++)
+    for (uint8_t synth = 0; synth < MAX_CHANNELS_OR_TRACKS; synth++)
     {
         if (mathSynthInstances[synth].samplesHeldFor != 0){ //ignore not playing synths
             if (mathSynthInstances[synth].samplesHeldFor < currentPlayingSampleNumber[synth]){
@@ -121,7 +121,7 @@ void cleanup_finished_midi(){
 }
 
 void initialise_the_mathsynths(){
-    for (uint8_t i = 0; i < MAX_SYNTHESIZERS; i++){
+    for (uint8_t i = 0; i < MAX_CHANNELS_OR_TRACKS; i++){
         mathSynthInstances[i].samplesHeldFor = 0;
         mathSynthInstances[i].notePeriod = 0;
         mathSynthInstances[i].noteAmplitude = 0;

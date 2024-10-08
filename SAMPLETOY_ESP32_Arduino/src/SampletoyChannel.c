@@ -3,9 +3,8 @@
 //
 
 #include "SampletoyChannel.h"
+#include "SampletoyMacros.h"
 #include <stdint.h>
-const uint8_t uint8_middle = 128;
-const uint32_t uint32_middle = 2147483648;
 
 
 //SET INITIAL GAIN TO 70% (179)

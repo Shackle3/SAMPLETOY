@@ -1,3 +1,5 @@
+//mainloop written by fabian, add your name here if you contribute
+
 #include <Arduino.h>
 #include <vector>
 #include <chrono>
@@ -11,41 +13,10 @@ extern "C"{ //C header inclusions
 }
 
 const int DAC_OUT_BUS[] {5, 19, 22, 26, 4, 18, 21, 25}; //@todo remove these, opt for different system wherein information is dealt
-#define DAC_CLOCK_PIN 23
-#define DAC_CLOCK_FREQ 44100
-#define DAC_BUS_WIDTH 8
-#define INTERRUPT_PIN_SEND_NEXT_SAMPLE_TO_DAC 25
-#define DAC_BUFFER_SIZE 64
-/// PIN 25 IS DAC CLOCK BIT, it controls which byte audio information is placed onto
-/// We have limited IO pins, therefore i'm not allocating a full 16 bit wide bus, but this method. Still need to implement, obvs this requires flipflops
-
-#define TOTAL_CHANNELS 16
-#define MAX_DB_VALUE 65535 //max val of uint_16
-
-//declare memory allocations:
-//
-//Allocate memory for all channels
-Channel sub_channels[TOTAL_CHANNELS];
-//Allocate memory for master channel
-MasterChannel session_master_channel;
-//Allocate memory for output buffer
-uint16_t dac_buffer[DAC_BUFFER_SIZE] = {0};
-//a dedicated temp int value here, use for variety of applications, check if in use before using to avoid overwrite
-int temp_generic = 0;
-bool temp_in_use = false;
-//Write or Play state bool
-#define EDIT false
-#define PLAY true
-bool runtime_logic_play_not_edit = EDIT; //initialise in edit
-
-
 // put function declarations here:
 namespace SampletoyMain{
     void switchRuntimeLogic();
 }
-
-void placeDacPortOnPins();
-void sumChannelsOnDacPort();
 
 //test declarations
 namespace debug{
@@ -53,6 +24,7 @@ namespace debug{
     void DumpMasterData(MasterChannel *target);
     bool interrupt_reported = false;
 }
+
 namespace tests{
     void mainTestCounterOverDACBus(double timeFactor);
     void mainTestAudioSynthesis();
@@ -60,6 +32,8 @@ namespace tests{
     void mainTestPwmIndependence();
     void IRAM_ATTR mainTestInterruptFunctionality();
     void mainReportInterruptOnPin();
+    void mainTestMathSynthesisPipeline();
+    void mainTestPlaylistFunctionalities();
 }
 
 //interrupt declarations
@@ -67,13 +41,23 @@ namespace interrupts{
     void IRAM_ATTR dacLoadNextSignalInterrupt();
 }
 
-//Global variables
-  //Debug
-  bool first_loop_iteration = true; //debug value used to display a message on the first loop of tests
+namespace runtime_assets{
+    //debug
+    bool first_loop_iteration = true; //debug value used to display a message on the first loop of tests
+    int temp_generic = 0;
+    bool temp_in_use = false;
 
-  //System Setup
-  int beats_per_minute = 140; //@todo implement this as struct in a Generation Coordinator struct system
+    //control variables
+    bool loop_mode_play_edit = EDIT; //initialise in edit
 
+    //runtime assets/variables, memory allocations
+    playlist instance_playlist;
+            //add bpm 140 to playlist
+    masterchannel session_master_channel;
+    channel sub_channels[TOTAL_CHANNELS];
+    uint16_t dac_buffer[DAC_BUFFER_SIZE] = {0};
+
+}
 //@todo LABEL YOUR TESTS IN TERMINAL
 
 void setup() {
@@ -96,18 +80,18 @@ void setup() {
   attachInterrupt(INTERRUPT_PIN_SEND_NEXT_SAMPLE_TO_DAC, tests::mainTestInterruptFunctionality, FALLING);
 
   //Initialise Channels
-  for (Channel &this_channel : sub_channels){
+  for (Channel &this_channel : runtime_assets::sub_channels){
       reinitialiseChannel(&this_channel);
   }
 
-  reinitialiseMasterChannel(&session_master_channel);
+  reinitialiseMasterChannel(&runtime_assets::session_master_channel);
   //Initialise IO
 
   Serial.println("setup finished");
 }
 
 void realloop() { //Real loop, change name for testloop below
-if (runtime_logic_play_not_edit){ //true, logic is playing
+if (runtime_assets::loop_mode_play_edit){ //true, PLAY environment is playing
 //Setup, change values
 
 //Calculate Synth values, update samples
@@ -116,8 +100,9 @@ if (runtime_logic_play_not_edit){ //true, logic is playing
 
 //Post, cleanup
 }
-else{
-    //Setup, change values
+else{ //EDIT environment
+
+//Setup, change values
 
 //Calculate Synth values, update samples
 
@@ -125,17 +110,16 @@ else{
 
 //Post, cleanup
 }
-    first_loop_iteration = false;
+    runtime_assets::first_loop_iteration = false;
 }
 
 void loop(){ //Test loop, a clean small loop that you enter by changing the name of the function. Its bad, i know :(
     // Call whatever test loop you need here, write tests in src and import here
     //Should be inaccessible to realloop
-    if (first_loop_iteration){
-        
+    if (runtime_assets::first_loop_iteration){
+        tests::mainTestPlaylistFunctionalities();
     }
-    tests::mainReportInterruptOnPin();
-    first_loop_iteration = false;
+    runtime_assets::first_loop_iteration = false;
 }
 
 
@@ -147,123 +131,47 @@ namespace SampletoyMain{
         /*
         @brief changes the main loop to go from writing mode to playing mode
         */
-        if (runtime_logic_play_not_edit){
-            runtime_logic_play_not_edit = EDIT;
-            first_loop_iteration = true;
+        if (runtime_assets::loop_mode_play_edit){
+            runtime_assets::loop_mode_play_edit = EDIT;
+            runtime_assets::first_loop_iteration = true;
         } else {
-            runtime_logic_play_not_edit = PLAY;
-            first_loop_iteration = true;
+            runtime_assets::loop_mode_play_edit = PLAY;
+            runtime_assets::first_loop_iteration = true;
         }
     }
 }
 
+namespace PlayFunctions{
+    //write play runtime functions here
+}
+
+namespace WriteFunctions{
+    //write Write runtime functions here
+}
 
 namespace SampletoyIO{ //mostly runtime so IO is implemented within main
 }
 
-//Previous implementations, @todo remove
-void OLDplaceDacPortOnPins(){
-  /*
-   *  Takes information in dacPort and places it on pins as hi/lo values
-  */
-    //for (uint8_t bit = 0; bit < DAC_BUS_WIDTH; bit++){ //bit in range 0 to bus width
-    //    digitalWrite(DAC_OUT_BUS[bit], getBitinInt(, bit)); //set output to hi or low
-    //}
+namespace SampletoyInterrupts{
+
 }
 
-void OLDsumChannelsOnDacPort(){ //@todo REWRITE FOR NEW CHANNEL SYSTEM
-    /*
-    * Takes all the channels and sums value to dac port
-    */
-    //dac_port = 0; //reset dac Port
-    for (Channel channel : sub_channels)
-    {
-        //master_channel = master_channel + channel;
-    }
-}
-
-//interrupt methods below
-//... @todo
-
-//Tests definitions
+//Tests definitions #remove in final version
 namespace tests {
     void mainTestCounterOverDACBus(double timeFactor) {
         /*
         Somewhat redundant function now, checks that the output pins are truely outputting and unlinked
         */
         //test pinout
-        if (first_loop_iteration) {
+        if (runtime_assets::first_loop_iteration) {
             Serial.println("running test counter over DAC pins, pins show boolean value of a counting uint8 ");
             Serial.println("output pins in LSB to MSB order is 5, 19, 22, 26, 4, 18, 21, 25");
-            first_loop_iteration = false; // don't display message again
+            runtime_assets::first_loop_iteration = false; // don't display message again
         }
         double blink_interval = 25 * timeFactor;
         placeDacPortOnPins();
         delay(blink_interval);
         //dac_port++;
-    }
-
-    void mainTestChannelFunctionalities() {
-        /*
-        Tests that the channels, and their methods are implemented correctly with all the pointer bullshit i wrote in there.
-        Mostly just editing and reading out of the memory
-        */
-        if (first_loop_iteration) {
-            Serial.println("running tests on the implementation and functionality of SampletoyChannel.c/h");
-            Serial.println("Beginning tests on functions:");
-            delay(5000);
-            //Assign increasing values for different channels using SET, then print it to terminal using GET. Sweep all channels
-            int counter = 0;            
-            for (Channel &channel_target : sub_channels){
-                setChannelLevel(&channel_target, counter, counter + 1);
-                counter = counter + 2;
-                setChannelGain(&channel_target, counter);
-                counter++;
-                setChannelLR(&channel_target, counter);
-                counter++;
-                setChannelMS(&channel_target, counter);
-                counter++;
-                
-            }
-            //unique values on all channels
-            int channel_counter = 1;
-            for (Channel &this_channel : sub_channels){
-                debug::DumpChannelData(&this_channel, channel_counter);
-                channel_counter++;
-            }
-            //Reset
-            for (Channel &this_channel : sub_channels){
-                reinitialiseChannel(&this_channel);
-            }
-            channel_counter = 1;
-            for (Channel &this_channel : sub_channels){
-                debug::DumpChannelData(&this_channel, channel_counter);
-                channel_counter++;
-            }
-            Serial.println("testing master in 5 seconds...");
-            delay(5000);
-            //run same test on Master
-            masterSetLevel(&session_master_channel, counter * 10, (counter + 1) * 10);
-            counter = counter + 2;
-            Serial.println("intermediate test on setlevel");
-            debug::DumpMasterData(&session_master_channel);
-            //testing first of the two add to level functions
-            resetMasterLevelToMiddle(&session_master_channel);
-            addSignalToMasterLevelLeft(&session_master_channel, counter);
-            counter++;
-            addSignalToMasterLevelRight(&session_master_channel, counter);
-            counter++;
-            masterSetGain(&session_master_channel, counter);
-            counter++;
-            masterSetPrescale(&session_master_channel, counter);
-            counter++;
-            masterSetMS(&session_master_channel, counter);
-            counter++;
-            debug::DumpMasterData(&session_master_channel);
-            //reset, check reset is correct
-            reinitialiseMasterChannel(&session_master_channel);
-            debug::DumpMasterData(&session_master_channel);
-        }
     }
 
     void mainTestPwmIndependence(){ 
@@ -285,14 +193,14 @@ namespace tests {
 
         Mind you interrupts are finniky, at the moment it reports like thousands of interrupts
         */
-        if (first_loop_iteration){ //DAC CLOCK blinks every 0.25 seconds.
+        if (runtime_assets::first_loop_iteration){ //DAC CLOCK blinks every 0.25 seconds.
             //analogWriteFrequency(4);
             Serial.println("first runtime check successful");
         }
 
         if (debug::interrupt_reported){
-            if(temp_generic % 44100 == 0){
-                Serial.printf("button pressed %u times... \n" , temp_generic);
+            if(runtime_assets::temp_generic % 44100 == 0){
+                Serial.printf("button pressed %u times... \n" , runtime_assets::temp_generic);
             }
             //Serial.printf("button pressed %u times... \n" , temp_generic);
             debug::interrupt_reported = false;
@@ -301,9 +209,91 @@ namespace tests {
 
     }
 
+    void mainTestMidiPlaylistDebugSetup1(){
+        //Creates sustained note on C4, lasts 1 second on, one second off
+    }
+
+    void mainTestMathSynthesisPipeline(){
+        //setup midi information
+    }
+
+    void mainTestPlaylistFunctionalities(){
+            //test 1
+        Serial.println("test1: Testing generic empty really is generic empty");
+        // create empty event, compare to generic empty, make sure they're the same
+        midinote debug_empty_midi_event = generateMidiEventFromVariables(0, 0, 0);
+        Serial.printf("%u == %u \n", midinoteReturnTimePointer(&debug_empty_midi_event), midinoteReturnTimePointer(&empty_midi_note_generic));
+        Serial.printf("%u == %u \n", midinoteReturnLength(&debug_empty_midi_event), midinoteReturnLength(&empty_midi_note_generic));
+        Serial.printf("%u == %u \n", midinoteReturnMidiCode(&debug_empty_midi_event), midinoteReturnMidiCode(&empty_midi_note_generic));
+        Serial.println("format debug = generic, any mismatches are bugs, end test1");
+    }
+
+     void mainTestChannelFunctionalities() {
+        /*
+        Tests that the channels, and their methods are implemented correctly with all the pointer bullshit i wrote in there.
+        Mostly just editing and reading out of the memory
+        */
+        if (runtime_assets::first_loop_iteration) {
+            Serial.println("running tests on the implementation and functionality of SampletoyChannel.c/h");
+            Serial.println("Beginning tests on functions:");
+            delay(5000);
+            //Assign increasing values for different channels using SET, then print it to terminal using GET. Sweep all channels
+            int counter = 0;            
+            for (Channel &channel_target : runtime_assets::sub_channels){
+                setChannelLevel(&channel_target, counter, counter + 1);
+                counter = counter + 2;
+                setChannelGain(&channel_target, counter);
+                counter++;
+                setChannelLR(&channel_target, counter);
+                counter++;
+                setChannelMS(&channel_target, counter);
+                counter++;
+                
+            }
+            //unique values on all channels
+            int channel_counter = 1;
+            for (Channel &this_channel : runtime_assets::sub_channels){
+                debug::DumpChannelData(&this_channel, channel_counter);
+                channel_counter++;
+            }
+            //Reset
+            for (Channel &this_channel : runtime_assets::sub_channels){
+                reinitialiseChannel(&this_channel);
+            }
+            channel_counter = 1;
+            for (Channel &this_channel : runtime_assets::sub_channels){
+                debug::DumpChannelData(&this_channel, channel_counter);
+                channel_counter++;
+            }
+            Serial.println("testing master in 5 seconds...");
+            delay(5000);
+            //run same test on Master
+            masterSetLevel(&runtime_assets::session_master_channel, counter * 10, (counter + 1) * 10);
+            counter = counter + 2;
+            Serial.println("intermediate test on setlevel");
+            debug::DumpMasterData(&runtime_assets::session_master_channel);
+            //testing first of the two add to level functions
+            resetMasterLevelToMiddle(&runtime_assets::session_master_channel);
+            addSignalToMasterLevelLeft(&runtime_assets::session_master_channel, counter);
+            counter++;
+            addSignalToMasterLevelRight(&runtime_assets::session_master_channel, counter);
+            counter++;
+            masterSetGain(&runtime_assets::session_master_channel, counter);
+            counter++;
+            masterSetPrescale(&runtime_assets::session_master_channel, counter);
+            counter++;
+            masterSetMS(&runtime_assets::session_master_channel, counter);
+            counter++;
+            debug::DumpMasterData(&runtime_assets::session_master_channel);
+            //reset, check reset is correct
+            reinitialiseMasterChannel(&runtime_assets::session_master_channel);
+            debug::DumpMasterData(&runtime_assets::session_master_channel);
+        }
+    }
+
     void IRAM_ATTR mainTestInterruptFunctionality(){
-        temp_in_use = true;
-        temp_generic++;
+        runtime_assets::temp_in_use = true;
+        runtime_assets::temp_generic++;
         // Serial.printf("button pressed %u times... \n" , temp_generic); ILLEGAL, interrupt cannot output to serial
         // probably do to its memory allocation :/
         debug::interrupt_reported = true;

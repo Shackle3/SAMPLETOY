@@ -11,21 +11,21 @@
 typedef struct Channel Channel;
 typedef struct MasterChannel MasterChannel;
 
-struct Channel{
+typedef struct Channel{
     uint32_t level_left;
     uint32_t level_right;
     uint8_t gain;
     uint8_t left_right_pan;
     uint8_t mono_side_correlation;
-};
+} channel;
 
-struct MasterChannel{
+typedef struct MasterChannel{
     uint32_t level_left;
     uint32_t level_right;
     uint8_t gain;
     float output_prescaling;
     uint8_t mono_side_correlation;
-};
+} masterchannel;
 
 //returns level
 uint32_t channelGetLevelLeft(const Channel* target);
