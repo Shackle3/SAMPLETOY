@@ -40,16 +40,6 @@ const double NOTE_FREQUENCIES[] = {27.5, 29.135, 30.868, 32.703, 34.648, 36.708,
 
 /// List of currently playing notes (nDFAWInfo[i] != 0),
 /// how long (in samples) each note will be held for, and at what duration one phase has in time
-mathsynth mathSynthInstances[MAX_CHANNELS_OR_TRACKS]; //size max synths x 2
-/*
- * For implementation see MathSynthHost struct in Audiosynthesis.h
- *
- * When currentPlayingSampleNumber = noteDurationSamples, complete last wave computation and then
- * set noteDurationSamples[i] back to 0
- */
-
-unsigned int currentPlayingSampleNumber[MAX_CHANNELS_OR_TRACKS];
-// Index corresponds to synth
 
 //Functions:
 //

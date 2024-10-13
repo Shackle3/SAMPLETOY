@@ -48,6 +48,7 @@ typedef struct Track{
    channel track_channel;
    generator track_source;
    miditrack track_midi;
+   uint8_t track_number; //somewhat redundant maybe but could be useful in debug. Worth the memory i reckon
 } track;
 
 typedef struct Playlist{
@@ -78,6 +79,8 @@ typedef struct Playlist{
 
 extern const midinote empty_midi_note_generic;
 
+extern playlist* playlist_instance; //saves passing argument
+
     //  :::method definitions:::
     //Midievent methods
 
@@ -93,6 +96,23 @@ uint8_t midinoteReturnMidiCode(const midinote* target);
 //creates a new midinote from uint variables
 midinote generateMidiEventFromVariables(uint16_t midi_start_subdivisions, uint8_t event_length, uint8_t event_midi_code);
 
+//reassignes current working playlist. Assumes only one playlist worked on at a time. Intended to be switched between loops.
+//saves passing argument for every playlist operation
+void reassignPlaylistInstance(const playlist* new_playlist_pointer);
 
+//reinitialises values in the assigned playlist, reinitialises channels in the tracks
+void reinitialisePlaylist();
+
+//playlist get functions
+uint8_t playlistGetBPM();
+track playlistGetTrack(int track_number);
+uint16_t playlistGetTrackLength();
+uint32_t playlistGetPlayheadPosition();
+int playlistGetSamplesSubdivision();
+upair32 playlistGetSubchannelOutput(int track_number);
+uint8_t playlistReturnElapsedTimeOnMidiEvent(int track_number);
+
+//playlist methods:
+int recalculateSamplesPerSubdivision(uint8_t new_bpm);
 
 #endif //SAMPLETOY_ESP32_ARDUINO_SAMPLETOYPLAYLIST_H

@@ -7,6 +7,7 @@
 //creating generic version of an empty midi note to be copied
 const midinote empty_midi_note_generic = {0, 0, 0};
 //assuming only one playlist instance
+
 playlist* playlist_instance;
 
 //Midievent functions
@@ -25,15 +26,29 @@ midinote generateMidiEventFromVariables(uint16_t midi_start_subdivisions, uint8_
 }
 
 //initialisers
-void definePlaylistInstance(playlist* target){
-    playlist_instance = target;
-}
 
 void reinitialiseMiditrack(miditrack* target){
     for (uint8_t i = 0; i < MIDITRACKARRAYSIZE; i++){
         target->miditrackArray[i] = empty_midi_note_generic;
     }
+}
 
+void reassignPlaylistInstance(const playlist* new_playlist_pointer){
+    //do once in setup
+    playlist_instance = new_playlist_pointer;
+}
+
+void reinitialisePlaylist(){
+    playlist_instance->bpm = DEFAULT_BPM; //reset bpm to default
+    playlist_instance->samples_per_subdivision = recalculateSamplesPerSubdivision(DEFAULT_BPM);
+    playlist_instance->playhead_position_subdivision = 0;
+    playlist_instance->track_length_beats = 16 * 4; //16 bars
+    for (int channel_or_track; channel_or_track < MAX_CHANNELS_OR_TRACKS; channel_or_track++){
+        playlist_instance->subchannel_sample_outputs[channel_or_track] = zero_pair32;
+        playlist_instance->elapsed_length_on_midievent[channel_or_track] = 0;
+        reinitialiseChannel(&playlist_instance->playlist_tracks->track_channel);
+        playlist_instance->playlist_tracks[channel_or_track].track_number = channel_or_track;
+    }
 }
 
 //playlist methods
@@ -47,16 +62,30 @@ int recalculateSamplesPerSubdivision(uint8_t new_bpm){
     return samples_per_sub;
 }
 
-void reinitialisePlaylist(){
-    playlist_instance->bpm = DEFAULT_BPM; //reset bpm to default
-    playlist_instance->samples_per_subdivision = recalculateSamplesPerSubdivision(DEFAULT_BPM);
-    playlist_instance->playhead_position_subdivision = 0;
-    playlist_instance->track_length_beats = 16 * 4; //16 bars
-    for (int channel_or_track; channel_or_track < MAX_CHANNELS_OR_TRACKS; channel_or_track++){
-        playlist_instance->subchannel_sample_outputs[channel_or_track] = zero_pair32;
-        playlist_instance->elapsed_length_on_midievent[channel_or_track] = 0;
-    }
+uint8_t playlistGetBPM(){
+    return playlist_instance->bpm;
 }
 
-void //@todo write the code that takes current playhead, and 
+track playlistGetTrack(int track_number){
+    return playlist_instance->playlist_tracks[track_number];
+}
 
+uint16_t playlistGetTrackLength(){
+    return playlist_instance->track_length_beats;
+}
+
+uint32_t playlistGetPlayheadPosition(){
+    return playlist_instance->playhead_position_subdivision;
+}
+
+int playlistGetSamplesSubdivision(){
+    return playlist_instance->samples_per_subdivision;
+}
+
+upair32 playlistGetSubchannelOutput(int track_number){
+    return playlist_instance->subchannel_sample_outputs[track_number];
+}
+
+uint8_t playlistReturnElapsedTimeOnMidiEvent(int track_number){
+    return playlist_instance->elapsed_length_on_midievent[track_number];
+}

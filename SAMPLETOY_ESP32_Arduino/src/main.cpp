@@ -80,11 +80,11 @@ void setup() {
   //attach interrupts, set to interrupt when falling signal. Use Pullup across project for consistency
   attachInterrupt(INTERRUPT_PIN_SEND_NEXT_SAMPLE_TO_DAC, interrupts::dacLoadNext, FALLING);
 
-  //Initialise Channels
-  for (Channel &this_channel : runtimeAssets::sub_channels){
-      reinitialiseChannel(&this_channel);
-  }
+  //Initialise Playlist, and track subchannels
+  reassignPlaylistInstance(&runtimeAssets::instance_playlist); //assign default instance to playlist, no support for further playlists yet
+  reinitialisePlaylist();
 
+    //init Master Channel
   reinitialiseMasterChannel(&runtimeAssets::session_master_channel);
   //Initialise IO
 
@@ -228,7 +228,24 @@ namespace tests {
         Serial.printf("%u == %u \n", midinoteReturnMidiCode(&debug_empty_midi_event), midinoteReturnMidiCode(&empty_midi_note_generic));
         Serial.println("format debug = generic, any mismatches are bugs, end test1 \n");
             //test 2
-        Serial.println("test2: ");
+        Serial.println("test2: initialising of playlist is correct (done in setup)");
+        Serial.println("printing tree of data associated with runtimeAssets::playlist");
+        Serial.println("==================\n");
+        Serial.printf("bpm == %u, set at %u \n", playlistGetBPM, DEFAULT_BPM);
+        Serial.printf("track length in beats == %u, set at 16 bars \n", playlistGetTrackLength());
+        Serial.printf("playhead position should be 0 == %u \n", playlistGetPlayheadPosition());
+        Serial.printf("subdivisions per sample is at %u \n", playlistGetSamplesSubdivision());
+        Serial.println("Playlist subchannel outputs: (should be at 0)");
+        for (int track_iteration = 0; track_iteration < MAX_CHANNELS_OR_TRACKS; track_iteration++){
+            upair32 subchannel_out = playlistGetSubchannelOutput(track_iteration);
+            Serial.printf("|=>  track %u:   %u, %u\n", track_iteration, subchannel_out.int1, subchannel_out.int2);
+        }
+        Serial.println("Playlist Elapsed Midi times: (should DEFINITELY be at 0)");
+        for (int track_iteration = 0; track_iteration < MAX_CHANNELS_OR_TRACKS; track_iteration++){
+            Serial.printf("|=> track %u:    %u\n", track_iteration, playlistReturnElapsedTimeOnMidiEvent(track_iteration));
+        } //all purely playlist variables run through, run through track variables now
+        
+
     }
 
      void mainTestChannelFunctionalities() {

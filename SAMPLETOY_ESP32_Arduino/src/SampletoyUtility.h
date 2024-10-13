@@ -10,6 +10,8 @@
 #ifndef SRC_SAMPLETOYUTILITY_H
 #define SRC_SAMPLETOYUTILITY_H
 
+#include <stdint.h>
+
 //Returns the bit at bitposition for any given "number" in base2 representation.
 int getBitinInt(int number, int bitposition);
 

@@ -13,7 +13,7 @@
 #define DAC_CLOCK_FREQ 44100
 #define DAC_BUS_WIDTH 8
 #define INTERRUPT_PIN_SEND_NEXT_SAMPLE_TO_DAC 25
-#define DAC_BUFFER_SIZE 64
+#define DAC_BUFFER_SIZE 128
 /// PIN 25 IS DAC CLOCK BIT, it controls which byte audio information is placed onto
 /// We have limited IO pins, therefore i'm not allocating a full 16 bit wide bus, but this method. Still need to implement, obvs this requires flipflops
 #define TOTAL_CHANNELS 16
