@@ -28,9 +28,10 @@ typedef struct MidiEvent{
     length -> length in subdivisions
     midi_code -> encoding number for the midi event
     */
-   uint16_t point_to;
-   uint8_t length;
-   uint8_t midi_code;
+    uint16_t point_to;
+    uint8_t length;
+    uint8_t midi_code;
+    uint16_t last_phase_position; //saves phase potition of last sample generated
 } midinote;
 
 typedef struct MidiTrack{
@@ -38,7 +39,8 @@ typedef struct MidiTrack{
 * Dynamically allocated list of midi event vectors, for information on the datatype
 stored in this list see Midievent struct
 */
-midinote miditrackArray[MIDITRACKARRAYSIZE]; //@todo will need to increase or decrease allocation
+    midinote miditrackArray[MIDITRACKARRAYSIZE]; //@todo will need to increase or decrease allocation
+
 } miditrack;
 
 typedef struct Track{
@@ -46,9 +48,10 @@ typedef struct Track{
     A unique instance within the playlist, contains track information
     */
    channel track_channel;
-   generator track_source;
+   generator track_generator;
    miditrack track_midi;
    uint8_t track_number; //somewhat redundant maybe but could be useful in debug. Worth the memory i reckon
+
 } track;
 
 typedef struct Playlist{

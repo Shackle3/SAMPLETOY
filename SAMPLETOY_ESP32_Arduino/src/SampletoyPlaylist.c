@@ -9,22 +9,6 @@ const midinote empty_midi_note_generic = {0, 0, 0};
 //assuming only one playlist instance
 
 playlist* playlist_instance;
-
-//Midievent functions
-uint16_t midinoteReturnTimePointer(const midinote* target){return target->point_to;}
-
-uint8_t midinoteReturnLength(const midinote* target){return target->length;}
-
-uint8_t midinoteReturnMidiCode(const midinote* target){return target->midi_code;}
-
-midinote generateMidiEventFromVariables(uint16_t midi_start_subdivisions, uint8_t event_length, uint8_t event_midi_code){
-    midinote temp_midi_event;
-    temp_midi_event.point_to = midi_start_subdivisions;
-    temp_midi_event.length = event_length;
-    temp_midi_event.midi_code = event_midi_code;
-    return temp_midi_event;
-}
-
 //initialisers
 
 void reinitialiseMiditrack(miditrack* target){
@@ -50,6 +34,25 @@ void reinitialisePlaylist(){
         playlist_instance->playlist_tracks[channel_or_track].track_number = channel_or_track;
     }
 }
+
+//Midievent methods
+uint16_t midinoteReturnTimePointer(const midinote* target){return target->point_to;}
+
+uint8_t midinoteReturnLength(const midinote* target){return target->length;}
+
+uint8_t midinoteReturnMidiCode(const midinote* target){return target->midi_code;}
+
+midinote generateMidiEventFromVariables(uint16_t midi_start_subdivisions, uint8_t event_length, uint8_t event_midi_code){
+    midinote temp_midi_event;
+    temp_midi_event.point_to = midi_start_subdivisions;
+    temp_midi_event.length = event_length;
+    temp_midi_event.midi_code = event_midi_code;
+    return temp_midi_event;
+}
+
+//Track methods
+
+
 
 //playlist methods
 int recalculateSamplesPerSubdivision(uint8_t new_bpm){

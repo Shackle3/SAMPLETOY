@@ -35,6 +35,15 @@
 //time interval for once sample (double) in seconds
 #define SAMPLERATE 44100
 #define SAMPLE_DURATION 0.00002267573 //SAMPLE RATE IS FIXED TO 44.100 khz, WILL CAUSE BUGS IF CHANGED
+#define MATHSYNTH true
+#define WAVETABLESYNTH false
+
+//wavetypes for mathsynth
+#define MUTE 0
+#define SINE 1
+#define SQUARE 2
+#define SAW 3
+#define TRIANGLE 4
 
 //CHANNEL MACROS
 //
