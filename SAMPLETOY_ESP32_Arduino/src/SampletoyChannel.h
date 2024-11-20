@@ -35,7 +35,9 @@ uint8_t channelGetLR(const channel* target);
 //returns Mono Side correlation bias
 uint8_t channelGetMonoSide(const channel* target);
 //resets values to originals, as defined in SampletoyChannel.c
-void reinitialiseChannel(channel* target);
+void channelReinitialise(channel* target);
+//resets channel level to middle, so no signal w/ dc offset uint32 middle
+void channelResetLevelToMiddle(channel* target);
 //sets level of channel to new value
 void setChannelLevel(channel* target, uint32_t new_level_left, uint32_t new_level_right);
 //sets new gain value to channel
@@ -44,6 +46,9 @@ void setChannelGain(channel* target, uint8_t new_gain);
 void setChannelLR(channel* target, uint8_t new_LR);
 //sets new Mid-Side correlation value
 void setChannelMS(channel* target, uint8_t new_MS);
+//adds a synthesiser signal to the channel, factors gain in. Operates in scale -> delta -> sum order
+void channelAddSynthesizerSignal(channel* target, uint32_t add_signal_left, uint32_t add_signal_right);
+
 
 //Returns master Level
 uint32_t masterGetLevelLeft(const masterchannel* target);
@@ -60,7 +65,7 @@ void masterSetLevel(masterchannel* target, uint32_t new_level_left, uint32_t new
 void addSignalToMasterLevelLeft(masterchannel* target, uint32_t new_level);
 void addSignalToMasterLevelRight(masterchannel* target, uint32_t new_level);
 //Resets only the master level to the init value, use at start of loop
-void resetMasterLevelToMiddle(masterchannel* target);
+void masterResetLevelToMiddle(masterchannel* target);
 //Sets Gain scaling value of master
 void masterSetGain(masterchannel* target, uint8_t new_gain);
 //sets Prescale constant applied to all incoming signals added to master
@@ -68,6 +73,6 @@ void masterSetPrescale(masterchannel* target, float new_prescaler);
 //Sets new Mid Side correlation bias value
 void masterSetMS(masterchannel* target, uint8_t new_MS);
 //Resets the master channel to its predefined initial values
-void reinitialiseMasterChannel(masterchannel* master);
+void masterChannelReinitialise(masterchannel* master);
 
 #endif //SAMPLETOY_ESP32_ARDUINO_SAMPLETOYCHANNEL_H

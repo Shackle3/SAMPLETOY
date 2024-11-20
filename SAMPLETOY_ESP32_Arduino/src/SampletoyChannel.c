@@ -36,12 +36,17 @@ uint8_t channelGetMonoSide(const channel* target){
     return target->mono_side_correlation;
 }
 
-void reinitialiseChannel(channel* target){
+void channelReinitialise(channel* target){
     target->level_left = uint32_middle;
     target->level_right = uint32_middle;
-    target->gain = 179;
+    target->gain = 150;
     target->mono_side_correlation = uint8_middle;
     target->left_right_pan = uint8_middle;
+}
+
+void channelResetLevelToMiddle(channel* target){
+    target->level_left = uint32_middle;
+    target->level_right = uint32_middle;
 }
 
 void setChannelLevel(channel* target, uint32_t new_level_left, uint32_t new_level_right){
@@ -59,6 +64,17 @@ void setChannelLR(channel* target, uint8_t new_LR){
 
 void setChannelMS(channel* target, uint8_t new_MS){
     target->mono_side_correlation = new_MS;
+}
+
+void channelAddSynthesizerSignal(channel* target, uint32_t add_signal_left, uint32_t add_signal_right){
+    uint32_t container_scaled_left_signal = (uint32_t)add_signal_left * (target->gain / UINT8_MAX); //scale signals with gain
+    uint32_t container_scaled_right_signal = (uint32_t)add_signal_right * (target->gain / UINT8_MAX); //scale signals with gain
+    //convert to delta
+    int delta_left = add_signal_left - uint32_middle;
+    int delta_right = add_signal_right - uint32_middle;
+    //add to channel level
+    target->level_left = (uint32_t) target->level_left + delta_left; //cast away clipping
+    target->level_right = (uint32_t) target->level_right + delta_right;
 }
 
 //Master channel functions
@@ -95,7 +111,7 @@ void addSignalToMasterLevelRight(masterchannel* target, uint32_t new_level){
 
 // @todo * target->output_prescaling doesn't work as intended, requires prescale to be a signed int
 
-void resetMasterLevelToMiddle(masterchannel* target){
+void masterResetLevelToMiddle(masterchannel* target){
     target->level_left = uint32_middle;
     target->level_right = uint32_middle;
 }
@@ -112,7 +128,7 @@ void masterSetMS(masterchannel* target, uint8_t new_MS){
     target->mono_side_correlation = new_MS;
 }
 
-void reinitialiseMasterChannel(masterchannel* master){
+void masterChannelReinitialise(masterchannel* master){
     master->level_left = uint32_middle;
     master->level_right = uint32_middle;
     master->gain = 179;

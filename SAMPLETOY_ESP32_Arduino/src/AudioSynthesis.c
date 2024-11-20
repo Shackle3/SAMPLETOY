@@ -9,6 +9,7 @@
 
 #include "AudioSynthesis.h"
 #include "SampletoyMacros.h"
+#include "SampletoyPlaylist.h"
 #include <math.h> //math functions, pi
 #include <stdint.h> //uint_8
 
@@ -40,7 +41,6 @@ double midi_frequency_translator(unsigned midiNoteCode){return NOTE_FREQUENCIES[
 
 //private wave functions (example sine)
 
-
 uint32_t mathgen_generate(const generator* target, double phase, uint8_t midicode){
     double wave_container = 0; //defines a wave 
     uint32_t output_container = uint32_middle; // setup new empty sig
@@ -59,4 +59,4 @@ uint32_t mathgen_generate(const generator* target, double phase, uint8_t midicod
     return output_container;
 }
 
-
+void callGenerateOnTrack(){}

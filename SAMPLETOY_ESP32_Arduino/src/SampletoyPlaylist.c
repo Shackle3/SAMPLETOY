@@ -13,7 +13,7 @@ playlist* playlist_instance;
 
 void reinitialiseMiditrack(miditrack* target){
     for (uint8_t i = 0; i < MIDITRACKARRAYSIZE; i++){
-        target->miditrackArray[i] = empty_midi_note_generic;
+        target->midi_note_array[i] = empty_midi_note_generic;
     }
 }
 
@@ -24,7 +24,6 @@ void reassignPlaylistInstance(const playlist* new_playlist_pointer){
 
 void reinitialisePlaylist(){
     playlist_instance->bpm = DEFAULT_BPM; //reset bpm to default
-    playlist_instance->samples_per_subdivision = recalculateSamplesPerSubdivision(DEFAULT_BPM);
     playlist_instance->playhead_position_subdivision = 0;
     playlist_instance->track_length_beats = 16 * 4; //16 bars
     for (int channel_or_track; channel_or_track < MAX_CHANNELS_OR_TRACKS; channel_or_track++){
@@ -49,6 +48,26 @@ midinote generateMidiEventFromVariables(uint16_t midi_start_subdivisions, uint8_
     temp_midi_event.midi_code = event_midi_code;
     return temp_midi_event;
 }
+
+//MidiTrack Methods
+void updateActiveMidiEvents(miditrack* target){
+    //reset no. of active midi events
+    target->count_active_midi_events = 0;
+    uint8_t counter = 0; //temp, used to insert midi events at index in active midi events
+    for (uint8_t event = 0; event < MIDITRACKARRAYSIZE; event++){
+        midinote* target_event = &target->midi_note_array[event];
+        const uint32_t note_start_subdivisions = target_event->point_to;
+        if (note_start_subdivisions < playlist_instance->playhead_position_subdivision){
+            uint32_t midi_event_end = note_start_subdivisions + target_event->length; //end position in subdivisions
+            if (playlist_instance->playhead_position_subdivision < midi_event_end){
+                //playhead is within the event
+                target->active_midi_events[target->count_active_midi_events] = target->midi_note_array[event]; //assign event to array
+                target->count_active_midi_events++;
+            }
+        }
+    }
+} //events are like a stack from 0 (oldest note) to n (newest note), [phase is saved in the note]
+
 
 //Track methods
 
@@ -80,15 +99,19 @@ uint16_t playlistGetTrackLength(){
 uint32_t playlistGetPlayheadPosition(){
     return playlist_instance->playhead_position_subdivision;
 }
-
-int playlistGetSamplesSubdivision(){
-    return playlist_instance->samples_per_subdivision;
-}
-
 upair32 playlistGetSubchannelOutput(int track_number){
     return playlist_instance->subchannel_sample_outputs[track_number];
 }
 
 uint8_t playlistReturnElapsedTimeOnMidiEvent(int track_number){
     return playlist_instance->elapsed_length_on_midievent[track_number];
+}
+
+void playlistHeirarchyReinitialise(){
+    //reinit variables based on heirary
+    //playlist reinit
+    reinitialisePlaylist();
+    //track reinit
+    //miditrack reinit
+    //@todo implement
 }

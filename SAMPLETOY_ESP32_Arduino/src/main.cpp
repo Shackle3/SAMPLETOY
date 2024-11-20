@@ -33,7 +33,7 @@ namespace runtimeAssets{
     bool loop_mode_play_edit = EDIT; //initialise in edit
 
     //important, functional, memory allocations
-    playlist instance_playlist;
+    playlist session_playlist;
             //add bpm 140 to playlist
     masterchannel session_master_channel;
     // channel sub_channels[TOTAL_CHANNELS]; removed as of implementation of playlist
@@ -81,11 +81,11 @@ void setup() {
   attachInterrupt(INTERRUPT_PIN_SEND_NEXT_SAMPLE_TO_DAC, interrupts::dacLoadNext, FALLING);
 
   //Initialise Playlist, and track subchannels
-  reassignPlaylistInstance(&runtimeAssets::instance_playlist); //assign default instance to playlist, no support for further playlists yet
+  reassignPlaylistInstance(&runtimeAssets::session_playlist); //assign default instance to playlist, no support for further playlists yet
   reinitialisePlaylist();
 
     //init Master Channel
-  reinitialiseMasterChannel(&runtimeAssets::session_master_channel);
+  masterChannelReinitialise(&runtimeAssets::session_master_channel);
   //Initialise IO
 
   Serial.println("setup finished");
@@ -144,6 +144,60 @@ namespace sampletoyMain{
 
 namespace PlayFunctions{
     //write play runtime functions here
+    void generateNextSamplesForSubdivision(){ //subdivision level call
+        //runtime level sample generation call
+        //!IMPORTANT should be called in loop() to batch generate samples for current playhead position, not next function
+        uint8_t generating_sample_number = 0;
+        //@todo algorithm that calls generateSample() until all samples for subdivision are generated
+        
+            //PRELOOP:
+        //generate current active midi events for the subdivision
+        for (track track_in_active_playlist : playlist_instance->playlist_tracks){
+            updateActiveMidiEvents(&track_in_active_playlist.track_midi); 
+        } //@todo make into generic function in SampletoyPlaylist
+        //define samples to generate
+        int n_samples_to_generate = recalculateSamplesPerSubdivision(playlistGetBPM());
+        while(generating_sample_number < n_samples_to_generate){ //enter the generate loop over n number of samples
+            generateSampleOntoMasterImplicit();
+        } 
+        //debug
+        Serial.println("Generated Batch Samples for playhead position");
+    }
+
+    void generateSampleOntoMasterImplicit(){ //should NOT be called in main loop, but instead be called by above function (generateNextSamples...)
+        //See documentation page @todo
+        //1. Reset Master bus level
+        masterResetLevelToMiddle(&runtimeAssets::session_master_channel);
+        //2. sample number n is implicitly contained in metadata, call generate onto every track
+        for (track track_instance : runtimeAssets::session_playlist.playlist_tracks){
+            channel* channel_instance = &track_instance.track_channel;
+            miditrack* miditrack_instance = &track_instance.track_midi;
+            generator* generator_instance = &track_instance.track_generator;
+            setChannelLevel(channel_instance, uint32_middle, uint32_middle); //reset all levels
+            //generate synthesiser outputs
+            for (uint8_t midievent_index = 0; midievent_index < miditrack_instance->count_active_midi_events; midievent_index++){
+                //@todo continue here, calling math gen and adding onto channel levels
+            }
+        }
+    }
+    
+    void generateTrackSamples(track* target){
+        /*
+        Generates Track Subchannel outputs onto playlist, does NOT push to master!
+        */ //@todo link to documentation page
+        //isolating member variables into more readable format
+        channel* target_channel_pointer = &target->track_channel;
+        generator* target_generator_pointer = &target->track_generator;
+        miditrack* target_miditrack_pointer = &target->track_midi;
+        uint8_t target_track_number = target->track_number; //clone, const so can be ambig
+        //implementation following from point 2.ii.a in above linked documentation
+        channelResetLevelToMiddle(target_channel_pointer);
+        
+
+        
+
+        Serial.println("Sample Generated Successfully!"); //debug, used to monitor Sample call / push rate in stack
+    }
 }
 
 namespace WriteFunctions{
@@ -234,7 +288,7 @@ namespace tests {
         Serial.printf("bpm == %u, set at %u \n", playlistGetBPM, DEFAULT_BPM);
         Serial.printf("track length in beats == %u, set at 16 bars \n", playlistGetTrackLength());
         Serial.printf("playhead position should be 0 == %u \n", playlistGetPlayheadPosition());
-        Serial.printf("subdivisions per sample is at %u \n", playlistGetSamplesSubdivision());
+        Serial.printf("subdivisions per sample is at %u \n", recalculateSamplesPerSubdivision(runtimeAssets::session_playlist.bpm));
         Serial.println("Playlist subchannel outputs: (should be at 0)");
         for (int track_iteration = 0; track_iteration < MAX_CHANNELS_OR_TRACKS; track_iteration++){
             upair32 subchannel_out = playlistGetSubchannelOutput(track_iteration);
@@ -280,7 +334,7 @@ namespace tests {
             }
             //Reset
             for (Channel &this_channel : sub_channels){
-                reinitialiseChannel(&this_channel);
+                channelReinitialise(&this_channel);
             }
             channel_counter = 1;
             for (Channel &this_channel : sub_channels){
@@ -295,7 +349,7 @@ namespace tests {
             Serial.println("intermediate test on setlevel");
             debug::DumpMasterData(&runtimeAssets::session_master_channel);
             //testing first of the two add to level functions
-            resetMasterLevelToMiddle(&runtimeAssets::session_master_channel);
+            masterResetLevelToMiddle(&runtimeAssets::session_master_channel);
             addSignalToMasterLevelLeft(&runtimeAssets::session_master_channel, counter);
             counter++;
             addSignalToMasterLevelRight(&runtimeAssets::session_master_channel, counter);
@@ -308,7 +362,7 @@ namespace tests {
             counter++;
             debug::DumpMasterData(&runtimeAssets::session_master_channel);
             //reset, check reset is correct
-            reinitialiseMasterChannel(&runtimeAssets::session_master_channel);
+            masterChannelReinitialise(&runtimeAssets::session_master_channel);
             debug::DumpMasterData(&runtimeAssets::session_master_channel);
         }
     }

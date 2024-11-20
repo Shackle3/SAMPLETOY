@@ -28,8 +28,8 @@ typedef struct MidiEvent{
     length -> length in subdivisions
     midi_code -> encoding number for the midi event
     */
-    uint16_t point_to;
-    uint8_t length;
+    uint32_t point_to;
+    uint16_t length;
     uint8_t midi_code;
     uint16_t last_phase_position; //saves phase potition of last sample generated
 } midinote;
@@ -39,7 +39,9 @@ typedef struct MidiTrack{
 * Dynamically allocated list of midi event vectors, for information on the datatype
 stored in this list see Midievent struct
 */
-    midinote miditrackArray[MIDITRACKARRAYSIZE]; //@todo will need to increase or decrease allocation
+    midinote midi_note_array[MIDITRACKARRAYSIZE]; //@todo will need to increase or decrease allocation
+    midinote active_midi_events[MAXIMUM_NUMBER_OF_MIDI_EVENTS_PLAYING]; //note the maximum amount of 16 midi events at a time
+    uint8_t count_active_midi_events;
 
 } miditrack;
 
@@ -69,8 +71,6 @@ typedef struct Playlist{
     uint16_t track_length_beats;
     //playhead position
     uint32_t playhead_position_subdivision;
-    //number of samples in one subdivision in this playlist
-    int samples_per_subdivision;
     //last output of all channels in this playlist, pair of uint32
     upair32 subchannel_sample_outputs[MAX_CHANNELS_OR_TRACKS];
     //counts how many subdivisions the note is held for, saves processing power
@@ -99,6 +99,10 @@ uint8_t midinoteReturnMidiCode(const midinote* target);
 //creates a new midinote from uint variables
 midinote generateMidiEventFromVariables(uint16_t midi_start_subdivisions, uint8_t event_length, uint8_t event_midi_code);
 
+//Miditrack methods
+//Updates the active midi events list at playhead position (subdivisions)
+void updateActiveMidiEvents(miditrack* target);
+
 //reassignes current working playlist. Assumes only one playlist worked on at a time. Intended to be switched between loops.
 //saves passing argument for every playlist operation
 void reassignPlaylistInstance(const playlist* new_playlist_pointer);
@@ -111,7 +115,6 @@ uint8_t playlistGetBPM();
 track playlistGetTrack(int track_number);
 uint16_t playlistGetTrackLength();
 uint32_t playlistGetPlayheadPosition();
-int playlistGetSamplesSubdivision();
 upair32 playlistGetSubchannelOutput(int track_number);
 uint8_t playlistReturnElapsedTimeOnMidiEvent(int track_number);
 
