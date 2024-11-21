@@ -41,15 +41,16 @@ uint8_t midinoteReturnLength(const midinote* target){return target->length;}
 
 uint8_t midinoteReturnMidiCode(const midinote* target){return target->midi_code;}
 
-midinote generateMidiEventFromVariables(uint16_t midi_start_subdivisions, uint8_t event_length, uint8_t event_midi_code){
+midinote generateMidiEventFromVariables(uint16_t midi_start_subdivisions, uint16_t event_length, uint8_t event_midi_code){
     midinote temp_midi_event;
     temp_midi_event.point_to = midi_start_subdivisions;
     temp_midi_event.length = event_length;
     temp_midi_event.midi_code = event_midi_code;
+    temp_midi_event.phase_position = 0; //@todo generate random phase here
     return temp_midi_event;
 }
 
-//MidiTrack Methods
+
 bool midieventCheckInsidePlayheadBounds(const midinote* target){
     //check if empty event, immediately excludes the right bound
     if (&target->midi_code == empty_midi_note_generic.midi_code){
@@ -66,6 +67,8 @@ bool midieventCheckInsidePlayheadBounds(const midinote* target){
     return false;
 }
 
+//MidiTrack Methods
+
 void trackUpdateActiveMidiEvents(miditrack* target){
     //reset no. of active midi events
     target->count_active_midi_events = 0; //doubles as counter
@@ -81,6 +84,12 @@ void trackUpdateActiveMidiEvents(miditrack* target){
     } //all active notes are in array, ideally don't call at every n subsample but only at start of playhead n samples generate call
 } //events are like a stack from 0 (oldest note) to n (newest note), [phase is saved in the note]
 
+void miditrackAddMidiEvent(miditrack* target, midinote event){
+    target->midi_note_array[target->total_number_of_midi_events] = event;
+    target->total_number_of_midi_events++;
+}
+
+//void miditrackRemoveMidiEvent @todo important
 
 //Track methods
 

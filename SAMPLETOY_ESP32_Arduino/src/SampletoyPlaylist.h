@@ -46,6 +46,9 @@ uint8_t midinoteReturnLength(const midinote* target);
 //returns the midi code of target midi event
 uint8_t midinoteReturnMidiCode(const midinote* target);
 
+//creates a midi event from variables
+midinote generateMidiEventFromVariables(uint16_t midi_start_subdivisions, uint8_t event_length, uint8_t event_midi_code);
+
 typedef struct MidiTrack{
 /*
 * Dynamically allocated list of midi event vectors, for information on the datatype
@@ -57,6 +60,9 @@ stored in this list see Midievent struct
     uint8_t total_number_of_midi_events;
 
 } miditrack;
+
+//places a midi event into the array
+void miditrackAddMidiEvent(miditrack* target, midinote event);
 
 typedef struct Track{
     /*

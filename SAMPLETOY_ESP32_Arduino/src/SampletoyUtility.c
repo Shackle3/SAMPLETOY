@@ -5,6 +5,7 @@
 #include "SampletoyUtility.h"
 
 upair32 zero_pair32 = {0, 0};
+upair16 zero_pair16 = {0,0};
 
 int getBitinInt(int number, int bitposition){
     return (number & (1<<bitposition)) != 0;

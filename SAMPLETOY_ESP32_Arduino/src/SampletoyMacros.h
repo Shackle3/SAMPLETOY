@@ -51,6 +51,7 @@
 //CHANNEL MACROS
 //
 #define uint8_middle 128
+#define uint16_middle 32768
 #define uint32_middle 2147483648
 
 #endif //SAMPLETOY_ESP32_ARDUINO_SAMPLETOYMACROS_H

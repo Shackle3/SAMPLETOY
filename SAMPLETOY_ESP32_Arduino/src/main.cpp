@@ -14,12 +14,25 @@ extern "C"{ //C header inclusions
 
 const int DAC_OUT_BUS[] {5, 19, 22, 26, 4, 18, 21, 25}; //@todo remove these, opt for different system wherein information is dealt
 // put function declarations here:
-namespace sampletoyMain{
+namespace SampletoyMain{
     void switchRuntimeLogic();
 }
 
-//interrupt declarations
-namespace interrupts{
+namespace PlayFunctions{
+    void generateNextSamplesForSubdivision();
+    void generateSampleOntoMasterImplicit();
+    void generateTrackSamples(track* target);
+}
+
+namespace WriteFunctions{
+
+}
+
+namespace SampletoyIO{
+
+}
+
+namespace SampletoyInterrupts{
     void IRAM_ATTR dacLoadNext();
 }
 
@@ -34,11 +47,11 @@ namespace runtimeAssets{
 
     //important, functional, memory allocations
     playlist session_playlist;
-            //add bpm 140 to playlist
     masterchannel session_master_channel;
     // channel sub_channels[TOTAL_CHANNELS]; removed as of implementation of playlist
     upair16 dac_buffer[DAC_BUFFER_SIZE] = {0};
     uint16_t dac_buffer_allocated;
+    upair16 dac_port;
 
 }
 //@todo LABEL YOUR TESTS IN TERMINAL
@@ -53,6 +66,7 @@ namespace tests{
     void mainReportInterruptOnPin();
     void mainTestMathSynthesisPipeline();
     void mainTestPlaylistFunctionalities();
+    void mainTestPutSineMidiOntoTracks();
 }
 
 //debugs, tests that should be removed when doing a release build
@@ -60,6 +74,8 @@ namespace debug{
     void DumpChannelData(const Channel *target, uint8_t channel_number);
     void DumpMasterData(const MasterChannel *target);
     bool interrupt_reported = false;
+    void debugGenerateNextSamplesForSubdivision();
+    void debugGenerateSampleOntoMasterImplicit();
 }
 
 void setup() {
@@ -78,9 +94,11 @@ void setup() {
     //setup interrupt reciever pin for sending samples to dac
   pinMode(INTERRUPT_PIN_SEND_NEXT_SAMPLE_TO_DAC, INPUT_PULLUP);
   runtimeAssets::dac_buffer_allocated = 0;
+
+  runtimeAssets::dac_port = (upair16){uint16_middle,uint16_middle};
   
   //attach interrupts, set to interrupt when falling signal. Use Pullup across project for consistency
-  attachInterrupt(INTERRUPT_PIN_SEND_NEXT_SAMPLE_TO_DAC, interrupts::dacLoadNext, FALLING);
+  attachInterrupt(INTERRUPT_PIN_SEND_NEXT_SAMPLE_TO_DAC, SampletoyInterrupts::dacLoadNext, FALLING);
 
   //Initialise Playlist, and track subchannels
   reassignPlaylistInstance(&runtimeAssets::session_playlist); //assign default instance to playlist, no support for further playlists yet
@@ -119,9 +137,15 @@ else{ //EDIT environment
 void loop(){ //Test loop, a clean small loop that you enter by changing the name of the function. Its bad, i know :(
     // Call whatever test loop you need here, write tests in src and import here
     //Should be inaccessible to realloop
+    int total_samples_number;
     if (runtimeAssets::first_loop_iteration){
-        tests::mainTestPlaylistFunctionalities();
+        tests::mainTestPutSineMidiOntoTracks(); //add even spaced sines
+        total_samples_number = 0;
     }
+    while(total_samples_number < UINT32_MAX){
+        debug::debugGenerateNextSamplesForSubdivision(&total_samples_number);
+    }
+
     runtimeAssets::first_loop_iteration = false;
 }
 
@@ -129,7 +153,7 @@ void loop(){ //Test loop, a clean small loop that you enter by changing the name
 // put function definitions here:
 //mititage implementation into this section, to only those which are runtime
 
-namespace sampletoyMain{
+namespace SampletoyMain{
     void switchRuntimeLogic(){
         /*
         @brief changes the main loop to go from writing mode to playing mode
@@ -149,22 +173,17 @@ namespace PlayFunctions{
     void generateNextSamplesForSubdivision(){ //subdivision level call
         //runtime level sample generation call
         //!IMPORTANT should be called in loop() to batch generate samples for current playhead position, dont use the other sub functions called in this one
+            //Preloop
         uint8_t generating_sample_number = 0;
-        //@todo algorithm that calls generateSample() until all samples for subdivision are generated (in progress)
-            //PRELOOP: global over all n calculations called here
-        for (track track_target : playlist_instance->playlist_tracks){
-            trackUpdateActiveMidiEvents(&track_target.track_midi);
-        }
         //generate current active midi events for the subdivision
         for (track track_in_active_playlist : playlist_instance->playlist_tracks){
             trackUpdateActiveMidiEvents(&track_in_active_playlist.track_midi); 
         } //@todo make into generic function in SampletoyPlaylist
         //define samples to generate
         int n_samples_to_generate = recalculateSamplesPerSubdivision(playlistGetBPM());
-        uint16_t n = 0;
         while(generating_sample_number < n_samples_to_generate){ //enter the generate loop over n number of samples
             generateSampleOntoMasterImplicit();
-            n++;
+            generating_sample_number++;
         } 
         runtimeAssets::session_playlist.playhead_position_subdivision++;
         //debug
@@ -221,10 +240,6 @@ namespace PlayFunctions{
             lr_signal_container = callGenerateForEvent(target_generator_pointer, &midinote_playing);
             channelAddSynthesizerSignal(target_channel_pointer, lr_signal_container.int1, lr_signal_container.int2);
         }
-
-        
-
-        Serial.println("Sample Generated Successfully!"); //debug, used to monitor Sample call / push rate in stack
     }
 }
 
@@ -236,7 +251,9 @@ namespace SampletoyIO{ //mostly runtime so IO is implemented within main
 }
 
 namespace SampletoyInterrupts{
-
+    void IRAM_ATTR dacLoadNext(){
+        //placeDacPortOnPins(); //or some shit like this when i actually implement it
+    }
 }
 
 //Tests definitions #remove in final version
@@ -395,6 +412,26 @@ namespace tests {
         }
     }
 
+    void mainTestPutSineMidiOntoTracks(){
+        //set all tracks to sine generators
+        for (track target : runtimeAssets::session_playlist.playlist_tracks){
+            target.track_generator.generator_type = MATHSYNTH;
+            target.track_generator.define_wave = SINE;
+        }
+        uint16_t note_interval = 1;
+        //add midi note on specific harmonic, interval is 2 piano notes
+        for (track target : runtimeAssets::session_playlist.playlist_tracks){
+            uint8_t midi_entry = 23 + 2*note_interval;
+            midinote new_event_container = generateMidiEventFromVariables(1, 187, midi_entry); //one subdivision silence, roughly 5 seconds of generation
+            note_interval++;
+        }
+    }
+
+    void mainTestGenerationIntoDacPipeline(){
+        clock_t debug_start = clock();
+
+    }
+
     void IRAM_ATTR mainTestInterruptFunctionality(){
         runtimeAssets::temp_in_use = true;
         runtimeAssets::temp_generic++;
@@ -426,11 +463,52 @@ namespace debug {
         Serial.println(masterGetPrescale(target));
         Serial.println(masterGetMS(target));
     }
-}
 
-namespace interrupts{
-    /// DO NOTE THAT INTERRUPTS CANT DO PRINT, so i have found out. 
-    void IRAM_ATTR dacLoadNext(){
-        //placeDacPortOnPins(); //or some shit like this when i actually implement it
+    void debugGenerateNextSamplesForSubdivision(int* current_total_sample_number){ //subdivision level call
+        //KEY DIFFERENCE, THIS ONE REPORTS GENERATIONS TO CONSOLE, DOES NOT PUSH TO DAC
+        //!IMPORTANT should be called in loop() to batch generate samples for current playhead position, dont use the other sub functions called in this one
+        uint8_t generating_sample_number = 0;
+            //PRELOOP: global over all n calculations called here
+        for (track track_target : playlist_instance->playlist_tracks){
+            trackUpdateActiveMidiEvents(&track_target.track_midi);
+        }
+        //generate current active midi events for the subdivision
+        //define samples to generate
+        int n_samples_to_generate = recalculateSamplesPerSubdivision(playlistGetBPM());
+        while(generating_sample_number < n_samples_to_generate){ //enter the generate loop over n number of samples
+            debug::debugGenerateSampleOntoMasterImplicit();
+            printf("%u, %u, %u", *current_total_sample_number, runtimeAssets::dac_port.int1, runtimeAssets::dac_port.int2);
+            generating_sample_number++;
+            *current_total_sample_number = *current_total_sample_number++;
+        } 
+        runtimeAssets::session_playlist.playhead_position_subdivision++;
+    }
+
+    void debugGenerateSampleOntoMasterImplicit(){ //should NOT be called in main loop, but instead be called by above function (generateNextSamples...)
+        //See documentation page @todo
+        //DOES NOT OUTPUT ONTO DAC, OUTPUTS INTO TERMINAL
+        //1. Reset Master bus level
+        masterResetLevelToMiddle(&runtimeAssets::session_master_channel);
+        //2. sample number n is implicitly contained in metadata, call generate onto every track
+        for (track track_instance : runtimeAssets::session_playlist.playlist_tracks){
+            //call generate onto all tracks for that sample
+            PlayFunctions::generateTrackSamples(&track_instance);            
+        }
+        //all channels contain audio information, summarising on array (2.iii)
+        for (uint8_t i; i < TOTAL_CHANNELS; i++){
+            playlist_instance->subchannel_sample_outputs[i] = (upair32){
+            playlist_instance->playlist_tracks[i].track_channel.level_left, 
+            playlist_instance->playlist_tracks[i].track_channel.level_right
+            };
+        }
+        //3. Sum channel to master
+        for (upair32 channel_output : playlist_instance->subchannel_sample_outputs){
+            masterAddSignalPair(&runtimeAssets::session_master_channel, channel_output);
+        }
+        //From here, master is finished calculating
+        //add into buffer
+        uint16_t temp_left_16bit = downscale_int32_to_int16(runtimeAssets::session_master_channel.level_left);
+        uint16_t temp_right_16bit = downscale_int32_to_int16(runtimeAssets::session_master_channel.level_right);
+        runtimeAssets::dac_port = (upair16){temp_left_16bit, temp_right_16bit};
     }
 }
