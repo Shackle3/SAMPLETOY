@@ -5,7 +5,7 @@
 #include "SampletoyPlaylist.h"
 
 //creating generic version of an empty midi note to be copied
-const midinote empty_midi_note_generic = {0, 0, 0};
+const midinote empty_midi_note_generic = {0, 0, UINT8_MAX, 0}; //UiNT8_MAX is FLAG FOR EMPTY EVENT @todo test correct allocation of flag
 //assuming only one playlist instance
 
 playlist* playlist_instance;
@@ -50,22 +50,35 @@ midinote generateMidiEventFromVariables(uint16_t midi_start_subdivisions, uint8_
 }
 
 //MidiTrack Methods
-void updateActiveMidiEvents(miditrack* target){
-    //reset no. of active midi events
-    target->count_active_midi_events = 0;
-    uint8_t counter = 0; //temp, used to insert midi events at index in active midi events
-    for (uint8_t event = 0; event < MIDITRACKARRAYSIZE; event++){
-        midinote* target_event = &target->midi_note_array[event];
-        const uint32_t note_start_subdivisions = target_event->point_to;
-        if (note_start_subdivisions < playlist_instance->playhead_position_subdivision){
-            uint32_t midi_event_end = note_start_subdivisions + target_event->length; //end position in subdivisions
-            if (playlist_instance->playhead_position_subdivision < midi_event_end){
-                //playhead is within the event
-                target->active_midi_events[target->count_active_midi_events] = target->midi_note_array[event]; //assign event to array
-                target->count_active_midi_events++;
-            }
-        }
+bool midieventCheckInsidePlayheadBounds(const midinote* target){
+    //check if empty event, immediately excludes the right bound
+    if (&target->midi_code == empty_midi_note_generic.midi_code){
+        return false; //event is empty
     }
+    //check left then right bound
+    if (&target->point_to > playlist_instance->playhead_position_subdivision){
+        int event_end = target->point_to + target->length;
+        if(event_end < playlist_instance->playhead_position_subdivision){
+            //both conditions passed, end and report positive case
+            return true;
+        }
+    } //all conditions passed, assume false
+    return false;
+}
+
+void trackUpdateActiveMidiEvents(miditrack* target){
+    //reset no. of active midi events
+    target->count_active_midi_events = 0; //doubles as counter
+    for (uint8_t event = 0; event < target->total_number_of_midi_events; event++){
+        if (target->count_active_midi_events > MAXIMUM_NUMBER_OF_MIDI_EVENTS_PLAYING){
+            break; //max active notes reached, do not exceed
+        }
+        midinote* target_event_loop_iteration = &target->midi_note_array[event];
+        if(midieventCheckInsidePlayheadBounds(target_event_loop_iteration)){ //true if in playhead boundaries
+            target->active_midi_events[target->count_active_midi_events] = *target_event_loop_iteration; //add midi event to active events array
+            target->count_active_midi_events++; 
+        }
+    } //all active notes are in array, ideally don't call at every n subsample but only at start of playhead n samples generate call
 } //events are like a stack from 0 (oldest note) to n (newest note), [phase is saved in the note]
 
 

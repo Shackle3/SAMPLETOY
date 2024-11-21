@@ -5,6 +5,10 @@
 #ifndef SAMPLETOY_ESP32_ARDUINO_SAMPLETOYCHANNEL_H
 
 #include <stdint.h>
+#include "SampletoyUtility.h"
+#include "SampletoyMacros.h"
+#include <math.h>
+#include <stdbool.h>
 
 #define SAMPLETOY_ESP32_ARDUINO_SAMPLETOYCHANNEL_H
 //extern typedef struct Channel Channel;
@@ -20,10 +24,13 @@ typedef struct Channel{
 typedef struct MasterChannel{
     uint32_t level_left;
     uint32_t level_right;
+    uint8_t gain_old_dontuse;
     uint8_t gain;
-    float output_prescaling;
     uint8_t mono_side_correlation;
 } masterchannel;
+
+//signal utility functions
+bool signalCheckClipping(int signal1, int signal2);
 
 //returns level
 uint32_t channelGetLevelLeft(const channel* target);
@@ -62,8 +69,8 @@ uint8_t  masterGetMS(const masterchannel* target);
 //Sets a new Level value
 void masterSetLevel(masterchannel* target, uint32_t new_level_left, uint32_t new_level_right);
 //Superpositions another channels level onto master
-void addSignalToMasterLevelLeft(masterchannel* target, uint32_t new_level);
-void addSignalToMasterLevelRight(masterchannel* target, uint32_t new_level);
+void masterAddSignalToLevelLeft(masterchannel* target, int new_level);
+void masterAddSignalToLevelRight(masterchannel* target, int new_level);
 //Resets only the master level to the init value, use at start of loop
 void masterResetLevelToMiddle(masterchannel* target);
 //Sets Gain scaling value of master
@@ -74,5 +81,7 @@ void masterSetPrescale(masterchannel* target, float new_prescaler);
 void masterSetMS(masterchannel* target, uint8_t new_MS);
 //Resets the master channel to its predefined initial values
 void masterChannelReinitialise(masterchannel* master);
+//adds signal into master, applies scaling
+void masterAddSignalPair(masterchannel* target, upair32 signal_to_add)
 
 #endif //SAMPLETOY_ESP32_ARDUINO_SAMPLETOYCHANNEL_H

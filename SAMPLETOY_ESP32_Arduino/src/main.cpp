@@ -37,7 +37,8 @@ namespace runtimeAssets{
             //add bpm 140 to playlist
     masterchannel session_master_channel;
     // channel sub_channels[TOTAL_CHANNELS]; removed as of implementation of playlist
-    uint16_t dac_buffer[DAC_BUFFER_SIZE] = {0};
+    upair16 dac_buffer[DAC_BUFFER_SIZE] = {0};
+    uint16_t dac_buffer_allocated;
 
 }
 //@todo LABEL YOUR TESTS IN TERMINAL
@@ -76,6 +77,7 @@ void setup() {
   analogWrite(DAC_CLOCK_PIN, 1); // assign clock
     //setup interrupt reciever pin for sending samples to dac
   pinMode(INTERRUPT_PIN_SEND_NEXT_SAMPLE_TO_DAC, INPUT_PULLUP);
+  runtimeAssets::dac_buffer_allocated = 0;
   
   //attach interrupts, set to interrupt when falling signal. Use Pullup across project for consistency
   attachInterrupt(INTERRUPT_PIN_SEND_NEXT_SAMPLE_TO_DAC, interrupts::dacLoadNext, FALLING);
@@ -146,20 +148,25 @@ namespace PlayFunctions{
     //write play runtime functions here
     void generateNextSamplesForSubdivision(){ //subdivision level call
         //runtime level sample generation call
-        //!IMPORTANT should be called in loop() to batch generate samples for current playhead position, not next function
+        //!IMPORTANT should be called in loop() to batch generate samples for current playhead position, dont use the other sub functions called in this one
         uint8_t generating_sample_number = 0;
-        //@todo algorithm that calls generateSample() until all samples for subdivision are generated
-        
-            //PRELOOP:
+        //@todo algorithm that calls generateSample() until all samples for subdivision are generated (in progress)
+            //PRELOOP: global over all n calculations called here
+        for (track track_target : playlist_instance->playlist_tracks){
+            trackUpdateActiveMidiEvents(&track_target.track_midi);
+        }
         //generate current active midi events for the subdivision
         for (track track_in_active_playlist : playlist_instance->playlist_tracks){
-            updateActiveMidiEvents(&track_in_active_playlist.track_midi); 
+            trackUpdateActiveMidiEvents(&track_in_active_playlist.track_midi); 
         } //@todo make into generic function in SampletoyPlaylist
         //define samples to generate
         int n_samples_to_generate = recalculateSamplesPerSubdivision(playlistGetBPM());
+        uint16_t n = 0;
         while(generating_sample_number < n_samples_to_generate){ //enter the generate loop over n number of samples
             generateSampleOntoMasterImplicit();
+            n++;
         } 
+        runtimeAssets::session_playlist.playhead_position_subdivision++;
         //debug
         Serial.println("Generated Batch Samples for playhead position");
     }
@@ -170,15 +177,30 @@ namespace PlayFunctions{
         masterResetLevelToMiddle(&runtimeAssets::session_master_channel);
         //2. sample number n is implicitly contained in metadata, call generate onto every track
         for (track track_instance : runtimeAssets::session_playlist.playlist_tracks){
-            channel* channel_instance = &track_instance.track_channel;
-            miditrack* miditrack_instance = &track_instance.track_midi;
-            generator* generator_instance = &track_instance.track_generator;
-            setChannelLevel(channel_instance, uint32_middle, uint32_middle); //reset all levels
-            //generate synthesiser outputs
-            for (uint8_t midievent_index = 0; midievent_index < miditrack_instance->count_active_midi_events; midievent_index++){
-                //@todo continue here, calling math gen and adding onto channel levels
-            }
+            //call generate onto all tracks for that sample
+            generateTrackSamples(&track_instance);            
         }
+        //all channels contain audio information, summarising on array (2.iii)
+        for (uint8_t i; i < TOTAL_CHANNELS; i++){
+            playlist_instance->subchannel_sample_outputs[i] = (upair32){
+            playlist_instance->playlist_tracks[i].track_channel.level_left, 
+            playlist_instance->playlist_tracks[i].track_channel.level_right
+            };
+        }
+        //3. Sum channel to master
+        for (upair32 channel_output : playlist_instance->subchannel_sample_outputs){
+            masterAddSignalPair(&runtimeAssets::session_master_channel, channel_output);
+        }
+        //From here, master is finished calculating
+        //freeze until space in buffer @todo ??!?!?!? ugly
+        while (runtimeAssets::dac_buffer_allocated > DAC_BUFFER_SIZE){
+            continue;
+        }
+        //add into buffer
+        uint16_t temp_left_16bit = downscale_int32_to_int16(runtimeAssets::session_master_channel.level_left);
+        uint16_t temp_right_16bit = downscale_int32_to_int16(runtimeAssets::session_master_channel.level_right);
+        runtimeAssets::dac_buffer_allocated++;
+        runtimeAssets::dac_buffer[runtimeAssets::dac_buffer_allocated] = (upair16){temp_left_16bit, temp_right_16bit};
     }
     
     void generateTrackSamples(track* target){
@@ -192,7 +214,13 @@ namespace PlayFunctions{
         uint8_t target_track_number = target->track_number; //clone, const so can be ambig
         //implementation following from point 2.ii.a in above linked documentation
         channelResetLevelToMiddle(target_channel_pointer);
-        
+        //active midi events calculated in preloop of generateNextSamples...
+        //generate each midi event onto channel track using addSignalInput call on channels
+        for (midinote midinote_playing : target->track_midi.active_midi_events){
+            upair32 lr_signal_container = {0,0};
+            lr_signal_container = callGenerateForEvent(target_generator_pointer, &midinote_playing);
+            channelAddSynthesizerSignal(target_channel_pointer, lr_signal_container.int1, lr_signal_container.int2);
+        }
 
         
 
@@ -350,9 +378,9 @@ namespace tests {
             debug::DumpMasterData(&runtimeAssets::session_master_channel);
             //testing first of the two add to level functions
             masterResetLevelToMiddle(&runtimeAssets::session_master_channel);
-            addSignalToMasterLevelLeft(&runtimeAssets::session_master_channel, counter);
+            masterAddSignalToLevelLeft(&runtimeAssets::session_master_channel, counter);
             counter++;
-            addSignalToMasterLevelRight(&runtimeAssets::session_master_channel, counter);
+            masterAddSignalToLevelRight(&runtimeAssets::session_master_channel, counter);
             counter++;
             masterSetGain(&runtimeAssets::session_master_channel, counter);
             counter++;

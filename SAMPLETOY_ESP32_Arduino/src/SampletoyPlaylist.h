@@ -31,8 +31,20 @@ typedef struct MidiEvent{
     uint32_t point_to;
     uint16_t length;
     uint8_t midi_code;
-    uint16_t last_phase_position; //saves phase potition of last sample generated
+    float phase_position; //currently generating at this phase position, update after generation
 } midinote;
+
+//checks if event is actively playing at current playhead
+bool midieventCheckInsidePlayheadBounds(const midinote* target);
+
+//returns the point which the event start vector points to 
+uint16_t midinoteReturnTimePointer(const midinote* target);
+
+//returns the length of the midi event
+uint8_t midinoteReturnLength(const midinote* target);
+
+//returns the midi code of target midi event
+uint8_t midinoteReturnMidiCode(const midinote* target);
 
 typedef struct MidiTrack{
 /*
@@ -42,6 +54,7 @@ stored in this list see Midievent struct
     midinote midi_note_array[MIDITRACKARRAYSIZE]; //@todo will need to increase or decrease allocation
     midinote active_midi_events[MAXIMUM_NUMBER_OF_MIDI_EVENTS_PLAYING]; //note the maximum amount of 16 midi events at a time
     uint8_t count_active_midi_events;
+    uint8_t total_number_of_midi_events;
 
 } miditrack;
 
@@ -55,6 +68,10 @@ typedef struct Track{
    uint8_t track_number; //somewhat redundant maybe but could be useful in debug. Worth the memory i reckon
 
 } track;
+
+//Miditrack methods
+//Updates the active midi events list at playhead position (subdivisions)
+void trackUpdateActiveMidiEvents(miditrack* target);
 
 typedef struct Playlist{
     /*
@@ -84,24 +101,8 @@ extern const midinote empty_midi_note_generic;
 
 extern playlist* playlist_instance; //saves passing argument
 
-    //  :::method definitions:::
-    //Midievent methods
-
-//returns the point which the event start vector points to 
-uint16_t midinoteReturnTimePointer(const midinote* target);
-
-//returns the length of the midi event
-uint8_t midinoteReturnLength(const midinote* target);
-
-//returns the midi code of target midi event
-uint8_t midinoteReturnMidiCode(const midinote* target);
-
 //creates a new midinote from uint variables
 midinote generateMidiEventFromVariables(uint16_t midi_start_subdivisions, uint8_t event_length, uint8_t event_midi_code);
-
-//Miditrack methods
-//Updates the active midi events list at playhead position (subdivisions)
-void updateActiveMidiEvents(miditrack* target);
 
 //reassignes current working playlist. Assumes only one playlist worked on at a time. Intended to be switched between loops.
 //saves passing argument for every playlist operation

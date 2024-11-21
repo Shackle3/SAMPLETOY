@@ -6,10 +6,10 @@
  *
  * */
 //
-
 #include "AudioSynthesis.h"
 #include "SampletoyMacros.h"
 #include "SampletoyPlaylist.h"
+#include "SampletoyUtility.h"
 #include <math.h> //math functions, pi
 #include <stdint.h> //uint_8
 
@@ -41,13 +41,13 @@ double midi_frequency_translator(unsigned midiNoteCode){return NOTE_FREQUENCIES[
 
 //private wave functions (example sine)
 
-uint32_t mathgen_generate(const generator* target, double phase, uint8_t midicode){
+uint32_t mathgen_generate(uint8_t wave_defined_generator, double phase, uint8_t midicode){
     double wave_container = 0; //defines a wave 
     uint32_t output_container = uint32_middle; // setup new empty sig
 
-    switch(target->define_wave){
-        case MUTE: wave_container = 0;
-        case SINE: wave_container = sin(phase);
+    switch(wave_defined_generator){
+        case MUTE: wave_container = 0; break;
+        case SINE: wave_container = sin(phase); break;
         // @todo extend for further cases
     }
 
@@ -59,4 +59,19 @@ uint32_t mathgen_generate(const generator* target, double phase, uint8_t midicod
     return output_container;
 }
 
-void callGenerateOnTrack(){}
+upair32 callGenerateForEvent(generator* target, midinote* input_note){
+    //for now, we mono @todo stereo capabilities, rand phase when adding midi notes
+    uint32_t temp_output_container;
+    //recaulcuate phase interval 
+    //see documentation, for calculation specifics
+    float deltaphase = (2 * PI * midi_frequency_translator(input_note->midi_code)) * SAMPLE_DURATION;
+    switch(target->generator_type){
+        case MATHSYNTH:
+            temp_output_container = mathgen_generate(target->define_wave, input_note->phase_position, input_note->midi_code);
+            input_note->phase_position = (float) fmod((input_note->phase_position + deltaphase), (2 * PI));
+            return (upair32){temp_output_container, temp_output_container}; //break redundant
+        case WAVETABLESYNTH:
+            //@todo implement
+            return (upair32){0,0};
+    }
+}

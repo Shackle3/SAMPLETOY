@@ -12,7 +12,6 @@ extern const double NOTE_FREQUENCIES[];
 typedef struct Generator{
     bool generator_type; //t = MATHGEN, f = WAVETABLE
     uint8_t define_wave; //number corresponds to a wave
-    double phase_interval;
     uint16_t frequency;
 } generator;
 
@@ -29,7 +28,8 @@ output:
 
 */
 
-uint32_t mathgen_generate(const generator* target, double phase, uint8_t midicode);
+uint32_t mathgen_generate(uint8_t wave_defined_generator, double phase, uint8_t midicode);
 
+upair32 callGenerateForEvent(generator* target, midinote* input_note);
 
 #endif //SAMPLETOYC_AUDIOSYNTHESIS_H

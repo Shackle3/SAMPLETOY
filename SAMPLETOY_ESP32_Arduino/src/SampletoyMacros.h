@@ -27,7 +27,8 @@
 #define MAX_CHANNELS_OR_TRACKS 16 //Current supported max size (from code) is 255 @todo test with increasing or decreasing
 //subdivisions per beat, so for the example of 4, it means the shortest note is a semiquaver
 #define SUBDIVISIONS_PER_BEAT 4
-#define MIDITRACKARRAYSIZE 64
+//maximum number of definable midi events in a track
+#define MIDITRACKARRAYSIZE UINT8_MAX
 #define DEFAULT_BPM 140
 #define MAXIMUM_NUMBER_OF_MIDI_EVENTS_PLAYING 16
 

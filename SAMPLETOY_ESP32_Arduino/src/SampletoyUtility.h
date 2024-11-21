@@ -21,6 +21,13 @@ typedef struct UnsignedPair_32{
     uint32_t int2;
 }upair32;
 
+typedef struct UnsignedPair_16{
+    uint16_t int1;
+    uint16_t int2;
+} upair16;
+
+uint16_t downscale_int32_to_int16(uint32_t input);
+
 extern upair32 zero_pair32;
 
 #endif //SRC_SAMPLETOYUTILITY_H
