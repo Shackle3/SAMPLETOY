@@ -10,6 +10,7 @@
 #include "SampletoyChannel.h"
 #include "SampletoyMacros.h"
 #include "SampletoyUtility.h"
+#include "SampletoyGenerator.h"
 #define SAMPLETOY_ESP32_ARDUINO_SAMPLETOYPLAYLIST_H
 
 typedef struct MidiEvent{
@@ -45,9 +46,6 @@ uint8_t midinoteReturnLength(const midinote* target);
 
 //returns the midi code of target midi event
 uint8_t midinoteReturnMidiCode(const midinote* target);
-
-//creates a midi event from variables
-midinote generateMidiEventFromVariables(uint16_t midi_start_subdivisions, uint8_t event_length, uint8_t event_midi_code);
 
 typedef struct MidiTrack{
 /*
@@ -108,11 +106,11 @@ extern const midinote empty_midi_note_generic;
 extern playlist* playlist_instance; //saves passing argument
 
 //creates a new midinote from uint variables
-midinote generateMidiEventFromVariables(uint16_t midi_start_subdivisions, uint8_t event_length, uint8_t event_midi_code);
+midinote generateMidiEventFromVariables(uint16_t midi_start_subdivisions, uint16_t event_length, uint8_t event_midi_code);
 
 //reassignes current working playlist. Assumes only one playlist worked on at a time. Intended to be switched between loops.
 //saves passing argument for every playlist operation
-void reassignPlaylistInstance(const playlist* new_playlist_pointer);
+void reassignPlaylistInstance(playlist* new_playlist_pointer);
 
 //reinitialises values in the assigned playlist, reinitialises channels in the tracks
 void reinitialisePlaylist();

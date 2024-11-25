@@ -74,7 +74,7 @@ namespace debug{
     void DumpChannelData(const Channel *target, uint8_t channel_number);
     void DumpMasterData(const MasterChannel *target);
     bool interrupt_reported = false;
-    void debugGenerateNextSamplesForSubdivision();
+    void debugGenerateNextSamplesForSubdivision(int* current_total_sample_number);
     void debugGenerateSampleOntoMasterImplicit();
 }
 
@@ -237,7 +237,7 @@ namespace PlayFunctions{
         //generate each midi event onto channel track using addSignalInput call on channels
         for (midinote midinote_playing : target->track_midi.active_midi_events){
             upair32 lr_signal_container = {0,0};
-            lr_signal_container = callGenerateForEvent(target_generator_pointer, &midinote_playing);
+            lr_signal_container = callGenerateForEvent(target_generator_pointer, midinote_playing.midi_code, &midinote_playing.phase_position);
             channelAddSynthesizerSignal(target_channel_pointer, lr_signal_container.int1, lr_signal_container.int2);
         }
     }

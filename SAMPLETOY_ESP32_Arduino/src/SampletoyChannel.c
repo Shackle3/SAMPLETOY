@@ -4,23 +4,14 @@
 
 #include "SampletoyChannel.h"
 
-
-
-//SET INITIAL GAIN TO 70% (179)
-//MIDDLE OF A uint8 is 128, so lr is set to middle (no pan)
-//MIDDLE OF uint32 is 2,147,483,648
-
 //Investigate methods further, its C tho so oyu know how it works :/
 //Channel Funtions
-
-
-bool signalCheckClipping(int signal1, int signal2){
+bool signalCheckClipping(const int signal1, const int signal2){
     //assumes both signals are centered around 0V = uint32 middle
     int sigsum = (signal1 - uint32_middle) + (signal2 - uint32_middle);
-    if (abs(sigsum) >= uint32_middle)
-    {
+    if (abs(sigsum) >= uint32_middle){
         return true;
-    } //clipping
+    }
     return false; //if case not reached, assume false for all other cases
 }
 

@@ -17,7 +17,7 @@ void reinitialiseMiditrack(miditrack* target){
     }
 }
 
-void reassignPlaylistInstance(const playlist* new_playlist_pointer){
+void reassignPlaylistInstance(playlist* new_playlist_pointer){
     //do once in setup
     playlist_instance = new_playlist_pointer;
 }
@@ -29,7 +29,7 @@ void reinitialisePlaylist(){
     for (int channel_or_track; channel_or_track < MAX_CHANNELS_OR_TRACKS; channel_or_track++){
         playlist_instance->subchannel_sample_outputs[channel_or_track] = zero_pair32;
         playlist_instance->elapsed_length_on_midievent[channel_or_track] = 0;
-        reinitialiseChannel(&playlist_instance->playlist_tracks->track_channel);
+        channelReinitialise(&playlist_instance->playlist_tracks->track_channel);
         playlist_instance->playlist_tracks[channel_or_track].track_number = channel_or_track;
     }
 }
@@ -53,11 +53,12 @@ midinote generateMidiEventFromVariables(uint16_t midi_start_subdivisions, uint16
 
 bool midieventCheckInsidePlayheadBounds(const midinote* target){
     //check if empty event, immediately excludes the right bound
-    if (&target->midi_code == empty_midi_note_generic.midi_code){
+    uint8_t target_midi_code = target->midi_code;
+    if (target_midi_code == empty_midi_note_generic.midi_code){
         return false; //event is empty
     }
     //check left then right bound
-    if (&target->point_to > playlist_instance->playhead_position_subdivision){
+    if (target->point_to > playlist_instance->playhead_position_subdivision){
         int event_end = target->point_to + target->length;
         if(event_end < playlist_instance->playhead_position_subdivision){
             //both conditions passed, end and report positive case

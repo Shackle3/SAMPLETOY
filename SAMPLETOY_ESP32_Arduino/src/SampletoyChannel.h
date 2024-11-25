@@ -82,6 +82,6 @@ void masterSetMS(masterchannel* target, uint8_t new_MS);
 //Resets the master channel to its predefined initial values
 void masterChannelReinitialise(masterchannel* master);
 //adds signal into master, applies scaling
-void masterAddSignalPair(masterchannel* target, upair32 signal_to_add)
+void masterAddSignalPair(masterchannel* target, upair32 signal_to_add);
 
 #endif //SAMPLETOY_ESP32_ARDUINO_SAMPLETOYCHANNEL_H
